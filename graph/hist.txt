@@ -1,0 +1,1002 @@
+ 1440  ls -lhrt
+ 1441  tar -cvf acids_jag.tar *out.mae
+ 1442  mkdir mnt/md/MDhelper
+ 1443  mkdir mnt/md/MDhelper/md_template
+ 1444  mkdir mnt/md/MDhelper/trajectory_analysis
+ 1445  exit
+ 1446  ls
+ 1447  cd workshop_MD/
+ 1448  ls
+ 1449  cd 6LUD_merged/
+ 1450  ls
+ 1451  vim 6LUD_merged_subst_ligand1.mae
+ 1452  cp 6LUD_merged.mae ../6LUD_merged.mae
+ 1453  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}" || exit;   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}";     echo $b_name;     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2; done; done
+ 1454  cd projects/NLRP3/protein_modelling/lig_dynamics/
+ 1455  ls
+ 1456  cd ../
+ 1457  ls
+ 1458  cd ../
+ 1459  cd try1
+ 1460  ls
+ 1461  cd dev/
+ 1462  ls
+ 1463  cd nlrp3_min_atp_mcc_10
+ 1464  ls
+ 1465  cd UNK.acpype/
+ 1466  ls
+ 1467  cd ../
+ 1468  vim UNK.acpype/nlrp3_min_atp_mcc_10_subst_ligand2.mol2
+ 1469  ls
+ 1470  cp nlrp3_min_atp_mcc_10.mae ../
+ 1471  ls
+ 1472  cd ../
+ 1473  ls
+ 1474  rm nlrp3_min_atp_mcc_10.mae
+ 1475  cp nlrp3_min_atp_mcc_13/*mae .
+ 1476  ls
+ 1477  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}" || exit;   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1478       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge;  done; done
+ 1479  ~/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_10
+ 1480  cd ~/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_10
+ 1481  vim ATP.acpype/*mol2
+ 1482  ~/workshop_MD/6LUD_merged
+ 1483  cd ~/workshop_MD/6LUD_merged
+ 1484  #module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}";   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}";     echo $b_name;     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2; done; done
+ 1485  cd ../
+ 1486  ls
+ 1487  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}";   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}";     echo $b_name;     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2; done; done
+ 1488  ls
+ 1489  vim 6LUD_merged_subst_ligand1.mol2
+ 1490  cd ../
+ 1491  ls
+ 1492  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}" || exit;   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}";     echo $b_name;     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1493       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&     name=$(awk 'BEGIN {FS = " "} ; END {print $2}' "$b_name".mol2) &&     acpype -i "$b_name".mol2 -n "$charge" -a gaff2 -o gmx -b "$name"; done; done
+ 1494  ls
+ 1495  vim YY3.acpype/
+ 1496  cd ../
+ 1497  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}" || exit;   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1498       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge; done; done
+ 1499  vim YY3.acpype/
+ 1500  cd ../
+ 1501  for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}"  &&   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1502       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge;     name=$(awk 'BEGIN {FS = " "} ; END {print $2}' "$b_name".mol2) &&     echo name _____ $name; done ; done
+ 1503  vim YY3.acpype/
+ 1504  acpype -h
+ 1505  acpype -i *.mol2 -c user -a gaff2 -o gmx -b unk
+ 1506  acpype -i *.mol2 -n 1 -a gaff2 -o gmx -b unk
+ 1507  cd projects/NLRP3/jaguar/
+ 1508  ls
+ 1509  cd ligand_preparation/
+ 1510  ls
+ 1511  mkdir iter3
+ 1512  cd iter3/
+ 1513  pwd
+ 1514  tar -xvf nlpr_iter3.tar 
+ 1515  oneq get-tasks
+ 1516  #for var in *mae; do echo 'n' | oneq start-task -c 5 -f prep_params.in -f $var --app schrodinger\|2021-1 "/app/schrodinger/2021-1/jaguar run AutoConf.py $var -WAIT -config prep_params.in -jobname ${var%.*} -HOST localhost:5 -use_one_node -TMPLAUNCHDIR"; done
+ 1517  cp ../prep_params.in .
+ 1518  for var in *mae; do echo 'n' | oneq start-task -c 5 -f prep_params.in -f $var --app schrodinger\|2021-1 "/app/schrodinger/2021-1/jaguar run AutoConf.py $var -WAIT -config prep_params.in -jobname ${var%.*} -HOST localhost:5 -use_one_node -TMPLAUNCHDIR"; done
+ 1519  ls -lhrt
+ 1520  oneq get-tasks > tasks.txt
+ 1521  vim tasks.txt 
+ 1522  cd projects/NLRP3/jaguar/ligand_preparation/
+ 1523  ls -lhrt
+ 1524  cd iter3
+ 1525  ls
+ 1526  while IFS= read -r line; do oneq get-results $line $line && cp $line/s3data/*-out.mae .; done < tasks.txt && rm *QMStage* *SemiEmpStage* *ConformerStage*
+ 1527  ды
+ 1528  ls
+ 1529  tar -cvf iter3-out.tar *out.mae
+ 1530  pwd
+ 1531  history
+ 1532  history | grep jag
+ 1533  /app/schrodinger/2021-1/jaguar pka -h
+ 1534  vim ~/one-q/91ec58c0-fe3f-4729-99ea-b675d8b35406/*log
+ 1535  oneq stop-task 91ec58c0-fe3f-4729-99ea-b675d8b35406 
+ 1536  vim ~/one-q/791fbf6c-bb65-4554-8175-ed8a50ecbeb7/*log
+ 1537  vim ~/one-q/57496f56-f292-400b-bd25-532de9dec3a7
+ 1538  oneq stop-task 57496f56-f292-400b-bd25-532de9dec3a7
+ 1539  vim ~/one-q/791fbf6c-bb65-4554-8175-ed8a50ecbeb7/*log
+ 1540  oneq get-task 791fbf6c-bb65-4554-8175-ed8a50ecbeb7
+ 1541  history | grep pka
+ 1542  vim ~/one-q/6066f4a5-68d1-4d50-9ae7-4affbcf09080/*log
+ 1543  oneq get-results 6066f4a5-68d1-4d50-9ae7-4affbcf09080 6066f4a5-68d1-4d50-9ae7-4affbcf09080
+ 1544  cd 6066f4a5-68d1-4d50-9ae7-4affbcf09080/s3data/
+ 1545  ls
+ 1546  pwd
+ 1547  cd projects/NLRP3/jaguar/
+ 1548  ls
+ 1549  cd ligand_preparation/
+ 1550  ls
+ 1551  cd ../
+ 1552  cd ligand_preparation/
+ 1553  ls
+ 1554  cd iter3
+ 1555  oneq get-task d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1556  oneq get-task d3a81776-3cd4-4fcc-a213-edcc13203b5c 0cdebc23-8b7b-496a-ab9f-3e0d2a680789
+ 1557  oneq get-results d3a81776-3cd4-4fcc-a213-edcc13203b5c d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1558  curl -XGET 'https://one-q-api.net.biocad.ru/v1/task/download/s3data/d3a81776-3cd4-4fcc-a213-edcc13203b5c.tar.gz' --output=d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1559  curl -XGET 'https://one-q-api.net.biocad.ru/v1/task/download/s3data/d3a81776-3cd4-4fcc-a213-edcc13203b5c.tar.gz' -output=d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1560  ls
+ 1561  curl -XGET 'https://one-q-api.net.biocad.ru/v1/task/download/s3data/d3a81776-3cd4-4fcc-a213-edcc13203b5c.tar.gz' -o d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1562  mkdir d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1563  ls d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1564  vim d3a81776-3cd4-4fcc-a213-edcc13203b5c/*tar.gz
+ 1565  cat d3a81776-3cd4-4fcc-a213-edcc13203b5c/*tar.gz
+ 1566  cat d3a81776-3cd4-4fcc-a213-edcc13203b5c/*log
+ 1567  vim 'utput=d3a81776-3cd4-4fcc-a213-edcc13203b5c'
+ 1568  curl -XGET 'https://one-q-api.net.biocad.ru/v1/task/download/s3data/d3a81776-3cd4-4fcc-a213-edcc13203b5c.tar.gz' -o d3a81776-3cd4-4fcc-a213-edcc13203b5cKKK
+ 1569  vim *KKK
+ 1570  curl -XGET 'https://one-q-api.net.biocad.ru/v1/task/download/s3data/d3a81776-3cd4-4fcc-a213-edcc13203b5c.tar.gz' -H "token:70c4ac642b709f00afb0f701a13392352a06a22d" -o d3a81776-3cd4-4fcc-a213-edcc13203b5cK
+ 1571  ls -lhrt
+ 1572  cd d3a81776-3cd4-4fcc-a213-edcc13203b5cK
+ 1573  ls
+ 1574  vim d3a81776-3cd4-4fcc-a213-edcc13203b5cK
+ 1575  oneq get-results d3a81776-3cd4-4fcc-a213-edcc13203b5c d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1576  vim .config/oneq/config.yaml 
+ 1577  oneq get-task d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1578  oneq get-task 791fbf6c-bb65-4554-8175-ed8a50ecbeb7
+ 1579  cd ~/projects/NLRP3/jaguar/ligand_preparation/iter3
+ 1580  oneq get-results 0cdebc23-8b7b-496a-ab9f-3e0d2a680789
+ 1581  oneq get-results 0cdebc23-8b7b-496a-ab9f-3e0d2a680789 0cdebc23-8b7b-496a-ab9f-3e0d2a680789
+ 1582  cd ~/projects/NLRP3/jaguar/ligand_preparation/iter3
+ 1583  oneq get-results d3a81776-3cd4-4fcc-a213-edcc13203b5c d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1584  oneq get-results 0cdebc23-8b7b-496a-ab9f-3e0d2a680789
+ 1585  oneq get-results 0cdebc23-8b7b-496a-ab9f-3e0d2a680789 0cdebc23-8b7b-496a-ab9f-3e0d2a680789
+ 1586  oneq get-results de23be9d-448a-4d97-a0da-fa90e2916507 de23be9d-448a-4d97-a0da-fa90e2916507
+ 1587  cd d3a81776-3cd4-4fcc-a213-edcc13203b5c
+ 1588  ls
+ 1589  cd s3data/
+ 1590  ls
+ 1591  pwd
+ 1592  cd ../../
+ 1593  cp 0cdebc23-8b7b-496a-ab9f-3e0d2a680789/s3data/*out.mae .
+ 1594  cp de23be9d-448a-4d97-a0da-fa90e2916507/s3data/*out.mae .
+ 1595  ls -lhrt
+ 1596  echo "-I, Gypsy-36_GM-LTR, Gypsy-37_GM-I, Gypsy-37_G" | sed "s#, #\n"
+ 1597  echo "-I, Gypsy-36_GM-LTR, Gypsy-37_GM-I, Gypsy-37_G" | sed "s#, #\n#"
+ 1598  echo "-I, Gypsy-36_GM-LTR, Gypsy-37_GM-I, Gypsy-37_G" | sed "s#, #\n#g"
+ 1599  cd projects/NLRP3/
+ 1600  ls -lhrt
+ 1601  cd docking/
+ 1602  ls -lhrt
+ 1603  cd ../try1
+ 1604  ls -lhrt
+ 1605  cd dev/
+ 1606  ls
+ 1607  cd nlrp3_min_atp_mcc_1
+ 1608  ls -lhrt
+ 1609  oneq
+ 1610  oneq volumes-ls
+ 1611  cd mnt/
+ 1612  ls
+ 1613  exit]
+ 1614  exit
+ 1615  cd /mnt
+ 1616  ls
+ 1617  mkdir MDhelper
+ 1618  mkdir mnt/MDhelper/md_template
+ 1619  ls
+ 1620  cd MDhelper/
+ 1621  ls
+ 1622  mkdir /mnt/MDhelper/md_template
+ 1623  ls
+ 1624  /mnt/MDhelper/trajectory_analysis
+ 1625  mkdir /mnt/MDhelper/trajectory_analysis
+ 1626  exit
+ 1627  ls /mnt/MDhelper/md_template/
+ 1628  ls -lhrt
+ 1629  cd mnt/MDhelper/md_template/
+ 1630  ls -lhrt
+ 1631  exit
+ 1632  vim /mnt/MDhelper/md_template/YY3.itp 
+ 1633  vi /mnt/MDhelper/md_template/YY3.itp 
+ 1634  unminimize
+ 1635  nano /mnt/MDhelper/md_template/YY3.itp
+ 1636  cat /mnt/MDhelper/md_template/YY3.itp
+ 1637  cat /mnt/MDhelper/md_template/topol.top 
+ 1638  exit
+ 1639  cd workshop_MD/
+ 1640  ls
+ 1641  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}"  &&   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1642       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge;     name=$(awk 'BEGIN {FS = " "} ; END {print $2}' "$b_name".mol2) &&     echo name _____ $name     acpype -i "$b_name".mol2 -n 1 -a gaff2 -o gmx -b "$name" &&     cp "$name".acpype/"$name"_GMX.itp "$name".itp &&     cp "$name".acpype/"$name"_GMX.gro "$name".gro &&     printf '%s\n' '0 & ! a H*' 'q' | gmx make_ndx -f "$name".gro -o index_"$name".ndx &&     printf '3\n' | gmx genrestr -f "$name".gro -n index_"$name".ndx -o posre_"$name".itp -fc 1000 1000 1000 &&     sed -i "/forcefield\.itp\"/a#include \"$name.itp\"\n#ifdef POSRES_LIG\n#include \"posre_$name.itp\"\n#endif\n" topol.top &&     sed -n -e '/\[ atomtypes \]/,/\[/{//!p;};' "$name".itp | tail -n +2 >> atomtypes.itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     sed -i -e '/\[ atomtypes \]/,/\[/{//!d;};' "$name".itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     echo "$name    1" >> topol.top &&     python /data/user/mikhaillebedev/tools/md_ifd/src/combine_topologies.py "$(realpath ${complex%.*}.gro)" "$(realpath $name.gro)" &&     python /data/user/mikhaillebedev/tools/md_ifd/src/sift_atomtypes.py atomtypes.itp;   done;   cp ../nlrp3_min_atp_mcc_15/*mdp . &&   cp ../nlrp3_min_atp_mcc_15/*ipynb . &&   sed -i "/forcefield\.itp\"/a#include \"atomtypes.itp\"" topol.top &&   cd ../; done
+ 1643  ls
+ 1644  rm \#topol.top.*# 
+ 1645  ls
+ 1646  tar -cvf 6LUD_prepared.tar
+ 1647  tar -cvf 6LUD_prepared.tar *
+ 1648  history | grep jaguar
+ 1649  module load gromacs/2020.2
+ 1650  cd projects/
+ 1651  ls -lhrt
+ 1652  cd ../
+ 1653  ls
+ 1654  cd workshop_MD/
+ 1655  ls
+ 1656  cd 6LUD_merged/
+ 1657  ls
+ 1658  gmx make_ndx -f 6LUD_merged.gro -o index.ndx
+ 1659  oneq get-logs-online 0bf08ba7-a8af-4647-871e-786de93f3505
+ 1660  cd /mnt/
+ 1661  ls
+ 1662  mkdir /mnt/MDhelper
+ 1663  mkdir /mnt/MDhelper/md_template
+ 1664  exit
+ 1665  cd /mnt/
+ 1666  ls
+ 1667  cd MDhelper/
+ 1668  ls
+ 1669  cd md_template/
+ 1670  ls
+ 1671  tar -xvf needed.tar 
+ 1672  ls -lhrt
+ 1673  exit
+ 1674  cd projects/NLRP3/
+ 1675  ls
+ 1676  cd try1/
+ 1677  ls
+ 1678  cd dev
+ 1679  ls
+ 1680  cd nlrp3_min_atp_mcc_1
+ 1681  ls
+ 1682  rm '#topol.top.3#' 
+ 1683  exit
+ 1684  hostory | grep for | grep oneq
+ 1685  history | grep for | grep oneq
+ 1686  cd projects/
+ 1687  ls
+ 1688  cd jaguar/
+ 1689  ls
+ 1690  cd ../
+ 1691  ls
+ 1692  cd NLRP3/
+ 1693  ls
+ 1694  cd jaguar/
+ 1695  ls
+ 1696  cd ligand_preparation/
+ 1697  ls
+ 1698  vim prep_params.in
+ 1699  man grep
+ 1700  exit
+ 1701  history | grep pka
+ 1702  vim ~/one-q/61c8d8f5-b488-4e5e-b25f-8323d4b9b2c9/*log
+ 1703  vim ~/one-q/e01b6a9c-878a-438f-9b5a-fba756260218/*log
+ 1704  cd projects/
+ 1705  ls
+ 1706  cd NLRP3/
+ 1707  ls
+ 1708  cd try1/
+ 1709  ls
+ 1710  cd dev/
+ 1711  ls
+ 1712  cd nlrp3_min_atp_mcc_1
+ 1713  ls
+ 1714  ls | grep mae
+ 1715  vim nlrp3_min_atp_mcc_1.mae
+ 1716  cd projects/
+ 1717  ls
+ 1718  cd NLRP3/
+ 1719  ls
+ 1720  cd docking/
+ 1721  ls
+ 1722  cd md
+ 1723  ls
+ 1724  mkdir japan
+ 1725  cd japan/
+ 1726  pwd
+ 1727  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}"  &&   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1728       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge;     name=$(awk 'BEGIN {FS = " "} ; END {print $2}' "$b_name".mol2) &&     echo name _____ $name     acpype -i "$b_name".mol2 -n 1 -a gaff2 -o gmx -b "$name" &&     cp "$name".acpype/"$name"_GMX.itp "$name".itp &&     cp "$name".acpype/"$name"_GMX.gro "$name".gro &&     printf '%s\n' '0 & ! a H*' 'q' | gmx make_ndx -f "$name".gro -o index_"$name".ndx &&     printf '3\n' | gmx genrestr -f "$name".gro -n index_"$name".ndx -o posre_"$name".itp -fc 1000 1000 1000 &&     sed -i "/forcefield\.itp\"/a#include \"$name.itp\"\n#ifdef POSRES_LIG\n#include \"posre_$name.itp\"\n#endif\n" topol.top &&     sed -n -e '/\[ atomtypes \]/,/\[/{//!p;};' "$name".itp | tail -n +2 >> atomtypes.itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     sed -i -e '/\[ atomtypes \]/,/\[/{//!d;};' "$name".itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     echo "$name    1" >> topol.top &&     python /data/user/mikhaillebedev/tools/md_ifd/src/combine_topologies.py "$(realpath ${complex%.*}.gro)" "$(realpath $name.gro)" &&     python /data/user/mikhaillebedev/tools/md_ifd/src/sift_atomtypes.py atomtypes.itp;   done;   cp /data/user/mikhaillebedev/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_1/*mdp . &&   cp /data/user/mikhaillebedev/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_1//*ipynb . &&   sed -i "/forcefield\.itp\"/a#include \"atomtypes.itp\"" topol.top &&   cd ../; done
+ 1729  ls
+ 1730  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   mkdir -p "${complex%.*}" &&   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}"  &&   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1731       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge;     name=$(awk 'BEGIN {FS = " "} ; END {print $2}' "$b_name".mol2) &&     echo name _____ $name     acpype -i "$b_name".mol2 -n 1 -a gaff2 -o gmx -b "$name" &&     cp "$name".acpype/"$name"_GMX.itp "$name".itp &&     cp "$name".acpype/"$name"_GMX.gro "$name".gro &&     printf '%s\n' '0 & ! a H*' 'q' | gmx make_ndx -f "$name".gro -o index_"$name".ndx &&     printf '3\n' | gmx genrestr -f "$name".gro -n index_"$name".ndx -o posre_"$name".itp -fc 1000 1000 1000 &&     sed -i "/forcefield\.itp\"/a#include \"$name.itp\"\n#ifdef POSRES_LIG\n#include \"posre_$name.itp\"\n#endif\n" topol.top &&     sed -n -e '/\[ atomtypes \]/,/\[/{//!p;};' "$name".itp | tail -n +2 >> atomtypes.itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     sed -i -e '/\[ atomtypes \]/,/\[/{//!d;};' "$name".itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     echo "$name    1" >> topol.top &&     python /data/user/mikhaillebedev/tools/md_ifd/src/combine_topologies.py "$(realpath ${complex%.*}.gro)" "$(realpath $name.gro)" &&     python /data/user/mikhaillebedev/tools/md_ifd/src/sift_atomtypes.py atomtypes.itp;   done;   cp /data/user/mikhaillebedev/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_1/*mdp . &&   cp /data/user/mikhaillebedev/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_1//*ipynb . &&   sed -i "/forcefield\.itp\"/a#include \"atomtypes.itp\"" topol.top &&   cd ../; done
+ 1732  rm -rf prot_japan
+ 1733  ls
+ 1734  module load gromacs/2020.2 && module load schrodinger/2020-1 && for complex in ./*.mae; do   mkdir -p "${complex%.*}" &&   cp "$complex" "${complex%.*}" &&   cd "${complex%.*}"  &&   "$SCHRODINGER"/run "$SCHRODINGER"/mmshare-v*/python/common/split_structure.py "$complex" "${complex%.*}"_subst.mae -m ligand -many_files &&   "$SCHRODINGER"/utilities/structconvert -imae "${complex%.*}"_subst*receptor*.mae -opdb "${complex%.*}".pdb &&   python /data/user/mikhaillebedev/tools/md_ifd/src/prepare_pdb.py "${complex%.*}".pdb "${complex%.*}"_fixed.pdb &&   echo -n > atomtypes.itp &&   printf "\"protein\"" > index.txt &&   printf "\"Protein" > index_group.txt &&   gmx pdb2gmx -f "${complex%.*}"_fixed.pdb -o "${complex%.*}".gro -water tip3p -ff amber99sb || exit;   for lig_f in ./"${complex%.*}"_subst*ligand*.mae; do     b_name="${lig_f%.*}" &&     echo B_NAME $b_name &&     "$SCHRODINGER"/utilities/mol2convert -imae "$lig_f" -omol2 "$b_name".mol2 &&     charge=$(awk '/@<TRIPOS>ATOM/{flag=1; next} /@<TRIPOS>BOND/{flag=0} flag' "$b_name".mol2 |\
+ 1735       awk 'BEGIN {FS = " "} ; {print $NF} ' | paste -sd+ - | bc | xargs printf '%.0f\n') &&      echo CHARGE _____ $charge;     name=$(awk 'BEGIN {FS = " "} ; END {print $2}' "$b_name".mol2) &&     echo name _____ $name;     acpype -i "$b_name".mol2 -n "$charge" -a gaff2 -o gmx -b "$name" &&     cp "$name".acpype/"$name"_GMX.itp "$name".itp &&     cp "$name".acpype/"$name"_GMX.gro "$name".gro &&     printf '%s\n' '0 & ! a H*' 'q' | gmx make_ndx -f "$name".gro -o index_"$name".ndx &&     printf '3\n' | gmx genrestr -f "$name".gro -n index_"$name".ndx -o posre_"$name".itp -fc 1000 1000 1000 &&     sed -i "/forcefield\.itp\"/a#include \"$name.itp\"\n#ifdef POSRES_LIG\n#include \"posre_$name.itp\"\n#endif\n" topol.top &&     sed -n -e '/\[ atomtypes \]/,/\[/{//!p;};' "$name".itp | tail -n +2 >> atomtypes.itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     sed -i -e '/\[ atomtypes \]/,/\[/{//!d;};' "$name".itp &&     sed -i -e 's|\[ atomtypes \]||g' "$name".itp &&     echo "$name    1" >> topol.top &&     python /data/user/mikhaillebedev/tools/md_ifd/src/combine_topologies.py "$(realpath ${complex%.*}.gro)" "$(realpath $name.gro)" &&     python /data/user/mikhaillebedev/tools/md_ifd/src/sift_atomtypes.py atomtypes.itp;   done;   cp /data/user/mikhaillebedev/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_1/*mdp . &&   cp /data/user/mikhaillebedev/projects/NLRP3/try1/dev/nlrp3_min_atp_mcc_1//*ipynb . &&   sed -i "/forcefield\.itp\"/a#include \"atomtypes.itp\"" topol.top &&   cd ../; done
+ 1736  tmux a -t 0
+ 1737  ls -lhrt
+ 1738  cd prot_japan/
+ 1739  ls -lhrt
+ 1740  vim UNK.itp 
+ 1741  vim ATP.itp 
+ 1742  oneq get-task a71b431b-1b3c-466e-87a4-a475cde09134
+ 1743  oneq get-statistics
+ 1744  oneq get-task a71b431b-1b3c-466e-87a4-a475cde09134
+ 1745  htop
+ 1746  exit
+ 1747  d
+ 1748  jupyter notebook --no-browser --port=8890 --ip 0.0.0.0
+ 1749  cd mnt/data/input/
+ 1750  ls
+ 1751  pwd
+ 1752  tree
+ 1753  cd ../
+ 1754  unminimize
+ 1755  tree
+ 1756  find . -print | sed -e "s;[^/]*/;|____;g;s;____|; |;g"
+ 1757  cd ../
+ 1758  find . -print | sed -e "s;[^/]*/;|____;g;s;____|; |;g"
+ 1759  apt-get
+ 1760  apt-get update
+ 1761  exit
+ 1762  cd nlp_graphs/
+ 1763  ls
+ 1764  pip install gdown
+ 1765  #gdown --folder https://drive.google.com/drive/folders/1qZIFRfA_tnuO5rYGe6CnFJ-j4QVk5SM0
+ 1766  cd Graph\&TextModel/molvae_regr/data/
+ 1767  ls
+ 1768  mkdir moses
+ 1769  mkdir moses/raw
+ 1770  cd moses/raw/
+ 1771  gdown --folder https://drive.google.com/drive/folders/1qZIFRfA_tnuO5rYGe6CnFJ-j4QVk5SM0
+ 1772  cd ../..
+ 1773  cd ../
+ 1774  pwd
+ 1775  vim preprocessing/conf/general/general.yaml 
+ 1776  vim model/conf/general/general.yaml 
+ 1777  ls data/moses/raw
+ 1778  htop
+ 1779  vim model/conf/model/model.yaml
+ 1780  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=lipophilicity run.n_runs=10
+ 1781  conda activate molvae_regr_env
+ 1782  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=lipophilicity run.n_runs=10
+ 1783  htop
+ 1784  python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=lipophilicity run.n_runs=10
+ 1785  htop
+ 1786  history | grep jupyter
+ 1787  cd ~/
+ 1788  #tar -zxvf wine
+ 1789  ls -lhrt
+ 1790  tar -zxvf wines
+ 1791  cd wines_nlp/
+ 1792  cd ../
+ 1793  history | grep jupyter
+ 1794  jupyter notebook --no-browser --port=8890
+ 1795  conda activate molvae_regr_env
+ 1796  cd /data/user/mikhaillebedev/nlp_graphs/GraphTextModel/molvae_regr
+ 1797  python -m preprocessing.main run.dataset=moses
+ 1798  wc -l data/moses/split/train.csv 
+ 1799  python -m preprocessing.main run.dataset=moses
+ 1800  tmux
+ 1801  htop
+ 1802  ls -lhrt
+ 1803  git
+ 1804  git clone https://github.com/jbr-ai-labs/nlp_graphs.git
+ 1805  cd nlp_graphs/
+ 1806  cd Graph\&TextModel/molvae_regr/
+ 1807  ls
+ 1808  #conda env create -f molvae_regr_env.yaml
+ 1809  vim molvae_regr_env.yaml
+ 1810  conda env create -f molvae_regr_env.yaml
+ 1811  conda activate molvae_regr_env
+ 1812  python preprocessing/moses_make_split.py
+ 1813  mkdir data/moses/split
+ 1814  cp data/moses/raw/train.csv data/moses/split/
+ 1815  python preprocessing/moses_make_split.py
+ 1816  python -m preprocessing.main run.dataset=moses
+ 1817  tmux
+ 1818  tmux
+ 1819  nvidia-smi
+ 1820  htop
+ 1821  cd nlp_graphs/Graph\&TextModel/molvae_regr/data/moses/
+ 1822  ls
+ 1823  pwd
+ 1824  ls
+ 1825  pwd
+ 1826  cd /data/user/mikhaillebedev/nlp_graphs/
+ 1827  mv Graph\&TextModel/ GraphTextModel
+ 1828  ls
+ 1829  cd GraphTextModel
+ 1830  ls
+ 1831  cd molvae_regr/
+ 1832  ls
+ 1833  cd data/moses/
+ 1834  ls
+ 1835  tar -zxvf moses_data.tar.gz 
+ 1836  ls
+ 1837  cd ../../
+ 1838  python -m preprocessing.main run.dataset=freesolv
+ 1839  tmux
+ 1840  gistory | grep jupyter
+ 1841  history | grep jupyter
+ 1842  tmux 
+ 1843  htop
+ 1844  cd wines_nlp/
+ 1845  ls
+ 1846  mkdir model
+ 1847  cd model
+ 1848  history | grep gdrive
+ 1849  gdown https://drive.google.com/file/d/15Dg_PIcGk9zQqhB2yE9DiFhkiJ1X2izf
+ 1850  conda 
+ 1851  tmux a -t 0
+ 1852  cd wines_nlp/
+ 1853  ls
+ 1854  mkdir src
+ 1855  cd src/
+ 1856  pwd
+ 1857  cd ../
+ 1858  git clone https://github.com/boopthesnoot/wines_recommendations_ru.git
+ 1859  cd wines_recommendations_ru/
+ 1860  cp -r ../wines_nlp .
+ 1861  ls
+ 1862  cd ../
+ 1863  cp -r wines_nlp/* wines_recommendations_ru/
+ 1864  ls wines_recommendations_ru/
+ 1865  cd wines_recommendations_ru/
+ 1866  rm -rf wines_nlp/
+ 1867  git status
+ 1868  git add notebooks/
+ 1869  git add src
+ 1870  git status
+ 1871  git commit -m "initial commit"
+ 1872  git config boopthesnoot "Mikhail Lebedev"
+ 1873  git config user.name "boopthesnoot"
+ 1874  git commit -m "initial commit"
+ 1875  git push origin mastter
+ 1876  git push origin master
+ 1877  git push origin main
+ 1878  cd src/
+ 1879  python model.py 
+ 1880  tmux a -t 0
+ 1881  conda activate molvae_regr_env
+ 1882  python -m preprocessing.main run.dataset=moses
+ 1883  cd data/moses/
+ 1884  ls -lhrt
+ 1885  cd graph_preproc
+ 1886  ls -lhrt
+ 1887  cd moses_data
+ 1888  ls
+ 1889  cd ../../
+ 1890  ls
+ 1891  #python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 1892  pwd
+ 1893  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 1894  python3 -c 'import dgl; print(dgl.__path__)'
+ 1895  cuda
+ 1896  nvcc --version
+ 1897  ls -l /usr/local | grep cuda
+ 1898  cat /usr/local/cuda/version.txt
+ 1899  rm /data/user/mikhaillebedev/anaconda3/envs/molvae_regr_env/lib/python3.7/site-packages/dgl
+ 1900  rm -rf /data/user/mikhaillebedev/anaconda3/envs/molvae_regr_env/lib/python3.7/site-packages/dgl
+ 1901  pip install dgl-cu101 dglgo -f https://data.dgl.ai/wheels/repo.html
+ 1902  python3 -c 'import dgl; print(dgl.__path__)'
+ 1903  python -c 'import dgl; print(dgl.__path__)'
+ 1904  conda install -c dglteam dgl-cuda10.1
+ 1905  python -c 'import dgl; print(dgl.__path__)'
+ 1906  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 1907  pwd
+ 1908  vim results/freesolv/model_graph/regr_vanilla/
+ 1909  vim results/freesolv/model_str_graph/regr_with_reco/
+ 1910  python -m model.main model.str=True model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 1911  gdown https://drive.google.com/file/d/15Dg_PIcGk9zQqhB2yE9DiFhkiJ1X2izf
+ 1912  cd ~/wines_nlp/
+ 1913  gdown https://drive.google.com/file/d/15Dg_PIcGk9zQqhB2yE9DiFhkiJ1X2izf
+ 1914  gdown https://drive.google.com/uc?id=15Dg_PIcGk9zQqhB2yE9DiFhkiJ1X2izf
+ 1915  mv rugpt2_proverb_8_dot.pt model/
+ 1916  head 15Dg_PIcGk9zQqhB2yE9DiFhkiJ1X2izf
+ 1917  rm 15Dg_PIcGk9zQqhB2yE9DiFhkiJ1X2izf
+ 1918  ls
+ 1919  cd ../wines_recommendations_ru/
+ 1920  cd src/
+ 1921  python model.py 
+ 1922  cd ../
+ 1923  ls
+ 1924  ls data/
+ 1925  ls data/wine/
+ 1926  git add data/wine/wines_winestyle.csv add data/wine/wines_winestyle_10k.csv add data/wine/wines_vectors.parquet 
+ 1927  git add data/wine/wines_winestyle.csv data/wine/wines_winestyle_10k.csv data/wine/wines_vectors.parquet 
+ 1928  git status
+ 1929  git commit -m "ADD: data"
+ 1930  git push origin master
+ 1931  git push origin main
+ 1932  git pull
+ 1933  git push origin main
+ 1934  pwd
+ 1935  cd data/wine/
+ 1936  ls -lhrt
+ 1937  gitt status
+ 1938  git status
+ 1939  git revert
+ 1940  git log
+ 1941  git revert --no-commit f1966e55c9ece5a98f455c8694a2f2d056769907
+ 1942  git status
+ 1943  git commit
+ 1944  ls -lhrt
+ 1945  cp ~/wines_nlp/data/wine/wines_vectors.parquet .
+ 1946  cp ~/wines_nlp/data/wine/wines_winestyle* .
+ 1947  ls -lhrt
+ 1948  tar -zcvf wines_data.tar.gz wines_winestyle.csv wines_vectors.parquet
+ 1949  ls -lhrt
+ 1950  cd 
+ 1951  ls
+ 1952  mkdir phen_screening
+ 1953  cd phen_screening/
+ 1954  ls
+ 1955  pwd
+ 1956  gzip -d SC_Collection_Dec-2021.sdf.gz
+ 1957  ls -lhrt
+ 1958  mkdir data
+ 1959  mv SC_Collection_Dec-2021.sdf data/
+ 1960  mkdir notebooks
+ 1961  cd notebooks/
+ 1962  ls
+ 1963  cd ../data/
+ 1964  ls
+ 1965  htop
+ 1966  docker
+ 1967  cd ~/
+ 1968  ls
+ 1969  docker pull molecularsets/moses
+ 1970  git lfs install
+ 1971  git lfs
+ 1972  ls
+ 1973  wget https://media.githubusercontent.com/media/molecularsets/moses/master/data/train.csv
+ 1974  wc -l train.csv
+ 1975  wget https://media.githubusercontent.com/media/molecularsets/moses/master/data/test.csv
+ 1976  wget https://media.githubusercontent.com/media/molecularsets/moses/master/data/test_scaffolds.csv
+ 1977  cd nlp_graphs/GraphTextModel/molvae_regr/
+ 1978  ls data/moses/split
+ 1979  head ~/train.csv 
+ 1980  mkdir data/moses/split_full
+ 1981  cp ~/test.csv data/moses/split_full/
+ 1982  tmux a -t 0
+ 1983  tmux a -t 1
+ 1984  ls
+ 1985  mkdir nlp
+ 1986  cd nlp
+ 1987  ls
+ 1988  pwd
+ 1989  tmux a -t 0
+ 1990  tmux a -t 1
+ 1991  tmux a -t 2
+ 1992  tmux a -t 3
+ 1993  tmux a -t 4
+ 1994  tmux a -t 1
+ 1995  ls
+ 1996  history | grep cd
+ 1997  cd nlp_graphs/GraphTextModel/molvae_regr/
+ 1998  ls
+ 1999  nvidia-smi
+ 2000  conda activate molvae_regr_env
+ 2001  nvidia-smi
+ 2002* 
+ 2003  history | grep python | tail
+ 2004  python -m model.main model.str=True model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2005  tree
+ 2006  apt  install tree
+ 2007  find . "full" | grep full
+ 2008  head data/freesolv/graph_preproc/train_edges.csv
+ 2009  #python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2010  python -m preprocessing.main run.dataset=freesolv
+ 2011  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2012  python -m preprocessing.main run.dataset=freesolv
+ 2013* 
+ 2014  python -m preprocessing.main run.dataset=freesolv
+ 2015  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2016  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=1
+ 2017  vim preprocessing/__init__.py 
+ 2018  find . "full" | grep full
+ 2019  python -m model.main model.str=True model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2020  ls
+ 2021  ls -lhrt
+ 2022  python calc_stats.py results/freesolv/model_str_graph/regr_with_reco/metrics.json 
+ 2023  #python -m model.main model.str=True model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2024  ls
+ 2025  pwd
+ 2026  python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2027  #python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2028  python calc_stats.py results/freesolv/model_str/regr_vanilla/metrics.json 
+ 2029  vim model/conf/model/model.yaml 
+ 2030  python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2031  #python calc_stats.py 
+ 2032  #python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2033  python calc_stats.py results/freesolv/model_str/regr_vanilla/metrics.json 
+ 2034  #python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2035  python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2036  python calc_stats.py results/freesolv/model_str/regr_vanilla/metrics.json 
+ 2037  python -m model.main model.str=True model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2038  #python -m model.main model.str=True model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2039  python calc_stats.py results/freesolv/model_str_graph/regr_vanilla/metrics.json 
+ 2040  python -m model.main model.str=False model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2041  #python -m model.main model.str=False model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2042  python calc_stats.py results/freesolv/model_graph/regr_with_reco/metrics.json 
+ 2043  ls /data/user/mikhaillebedev/anaconda3/envs/my-rdkit-env/bin
+ 2044  ls /data/user/mikhaillebedev/anaconda3/bin
+ 2045  ls /data/user/mikhaillebedev/.local/bin
+ 2046  #python calc_stats.py results/freesolv/model_graph/regr_with_reco/metrics.json 
+ 2047  clear
+ 2048  python calc_stats.py results/freesolv/model_graph/regr_with_reco/metrics.json 
+ 2049  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2050  python calc_stats.py results/freesolv/model_graph/regr_vanilla/metrics.json 
+ 2051  python -m model.main model.str=True model.graph=False run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2052  python calc_stats.py results/freesolv/model_str/regr_vanilla/metrics.json 
+ 2053  python -m model.main model.str=False model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2054  vim model/conf/model/model.yaml 
+ 2055  python -m model.main model.str=False model.graph=True run.regr_vanilla=False run.reco=True run.regr_with_reco=True run.regr_dataset=freesolv run.n_runs=10
+ 2056  python calc_stats.py results/freesolv/model_str/regr_vanilla/metrics.json 
+ 2057  python calc_stats.py results/freesolv/model_graph/regr_vanilla/metrics.json 
+ 2058  vim model/conf/model/model.yaml 
+ 2059  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2060  vim model/conf/model/model.yaml 
+ 2061  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2062  vim model/conf/model/model.yaml 
+ 2063  python -m model.main model.str=False model.graph=True run.regr_vanilla=True run.reco=False run.regr_with_reco=False run.regr_dataset=freesolv run.n_runs=10
+ 2064  python calc_stats.py results/freesolv/model_graph/regr_vanilla/metrics.json 
+ 2065  python model/transformer_mvp.py 
+ 2066  which pip
+ 2067  ~/anaconda3/envs/molvae_regr_env/bin/pip install transformers
+ 2068  python model/transformer_mvp.py 
+ 2069  cd model/
+ 2070  python model/transformer_mvp.py 
+ 2071  python transformer_mvp.py 
+ 2072  ls ~/anaconda3/envs/my-rdkit-env2/bin/
+ 2073  ls ~/anaconda3/envs/my-rdkit-env2/bin/python
+ 2074  ls ~/anaconda3/envs/my-rdkit-env2/bin/python3
+ 2075  ls ~/anaconda3/envs/my-rdkit-env2/bin/python3.9
+ 2076  pwd
+ 2077  cd ~/anaconda3/envs/my-rdkit-env2/
+ 2078  find . -iname "molplotly" | grep molplotly
+ 2079  vim /data/user/mikhaillebedev/anaconda3/envs/my-rdkit-env2/lib/python3.9/site-packages/molplotly/
+ 2080  cd ~/nlp_graphs/GraphTextModel/molvae_regr/
+ 2081  conda create --name molbart rdkit -c rdkit
+ 2082  conda activate molbart
+ 2083  conda install pytorch==1.8.0 torchvision cudatoolkit=11.1 -c pytorch -c nvidia
+ 2084  conda install gcc_linux-64 gxx_linux-64 mpi4py
+ 2085  ~/anaconda3/envs/molbart/bin/pip install -r requirements.tx
+ 2086  conda install pip
+ 2087  cd ~/anaconda3/envs/molbart/bin/
+ 2088  ls -lhrt | grep python
+ 2089  pwd
+ 2090  vim python3.6m-config
+ 2091  cd ../lib
+ 2092  ls -lhrtt
+ 2093  ls -lhrt | grep _sysconfigdata_x86_64
+ 2094  ls -lhrt | grep sysconfigdata
+ 2095  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/distutils/sysconfig.py
+ 2096  ~/anaconda3/envs/molbart/bin/pip install -r requirements.tx
+ 2097  find ~/anaconda3/ -name _sysconfigdata_x86_64*
+ 2098  ~/anaconda3/envs/molbart/bin/pip install -r requirements.tx
+ 2099  ~/anaconda3/envs/molbart/bin/pip install -r requirements.txt
+ 2100  cd ~/Chemformer/
+ 2101  pwd
+ 2102  ls
+ 2103  cd molbart/data/
+ 2104  pwd
+ 2105  ls
+ 2106  vim datasets.py
+ 2107  pwd
+ 2108  conda create -n huggingmolecules python=3.8.5
+ 2109  conda activate huggingmolecules
+ 2110  conda install -c conda-forge rdkit==2020.09.1
+ 2111  conda activate huggingmolecules
+ 2112  cd ~/
+ 2113  git clone https://github.com/gmum/huggingmolecules.git
+ 2114  cd huggingmolecules
+ 2115  python -m src.clean_cache --all
+ 2116  which python
+ 2117  which pip
+ 2118  python -m pip install -e ./src
+ 2119  ls experiments/
+ 2120  python examples/quick_tour.py 
+ 2121  conda install -c anaconda libstdcxx-ng
+ 2122  python examples/quick_tour.py 
+ 2123  conda install libgcc=5.2.0
+ 2124  conda install libgcc
+ 2125  conda install libgcc=5.2.0
+ 2126  python examples/quick_tour.py 
+ 2127  conda uninstall cmake
+ 2128  vim ImportError: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+ 2129  vim /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+ 2130  vim /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/python3.8/site-packages/rdkit/Chem/__init__.py
+ 2131  cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/python3.8/
+ 2132  python examples/quick_tour.py 
+ 2133  echo $LD_LIBRARY_PATH
+ 2134  export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+ 2135  echo $LD_LIBRARY_PATH
+ 2136  python examples/quick_tour.py 
+ 2137  conda install libgcc
+ 2138  #cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/python3.8/
+ 2139  #lib/x86_64-linux-gnu/
+ 2140  #cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/
+ 2141  cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/
+ 2142  python examples/quick_tour.py 
+ 2143  ls /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/
+ 2144  ls /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/python3.8/site-packages/rdkit/Chem/
+ 2145  find /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/python3.8/site-packages/rdkit/Chem/ -name libboost_regex
+ 2146  find /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/lib/python3.8/site-packages/rdkit/Chem/ -name *libboost_regex*
+ 2147  strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28 | grep GLIBCXX
+ 2148  strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.25 | grep GLIBCXX
+ 2149  #pip install libstdcxx-ng
+ 2150  /data/user/mikhaillebedev/anaconda3/envs/huggingmolecules/bin/python -m pip install libstdcxx-ng
+ 2151  conda install libstdcxx-ng
+ 2152  conda activate chemformer
+ 2153  conda info --envs
+ 2154  conda activate molbart
+ 2155  cd ~/Chemformer/example_scripts/finetune_regression/
+ 2156  ls
+ 2157  which python
+ 2158  python finetuneRegr.py
+ 2159  vim finetuneRegr.py 
+ 2160  cd ../../
+ 2161  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=50
+ 2162  conda activate base
+ 2163  conda activate molbart
+ 2164  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=50
+ 2165  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2166  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2167  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2168  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2169  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2170  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2171  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2172  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2173  python -c "import pytorch_lightning as pl
+print(pl.__version__)"
+ 2174  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2175  python -c "import pytorch_lightning as pl
+print(pl.__version__)"
+ 2176  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2177  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2178  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2179  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2180  ls -la example_scripts/finetune_regression/
+ 2181  rm example_scripts/finetune_regression/.finetuneRegr.py.swp
+ 2182  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2183  rm example_scripts/finetune_regression/.finetuneRegr.py.swp
+ 2184  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2185  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2186  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2187  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2188  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=10
+ 2189  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2190  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=1
+ 2191  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2192  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=1
+ 2193  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2194  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=1
+ 2195  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2196  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=1
+ 2197  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2198  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100
+ 2199  vim example_scripts/finetune_regression/finetuneRegr.py 
+ 2200  vim example_scripts/finetune_regression/finetuneRegr.py
+ 2201  which python
+ 2202  ls /tmp/pycharm_project_608/
+ 2203  ls
+ 2204  #python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100
+ 2205* 
+ 2206  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100
+ 2207  pwd
+ 2208  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100
+ 2209* 
+ 2210  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100
+ 2211  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100 --vocab_path=example_scripts/finetune_regression/prop_bart_vocab.txt
+ 2212  which python
+ 2213  pwd
+ 2214  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100 --vocab_path=example_scripts/finetune_regression/prop_bart_vocab.txt
+ 2215  ls data
+ 2216  ls
+ 2217  head test_freesolv.csv
+ 2218  python -m example_scripts.finetune_regression.finetuneRegr --data_path=freesolv_hmm.csv --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100 --vocab_path=example_scripts/finetune_regression/prop_bart_vocab.txt
+ 2219  python -m example_scripts.finetune_regression.finetuneRegr --data_path=. --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=False --epochs=100 --vocab_path=example_scripts/finetune_regression/prop_bart_vocab.txt
+ 2220  python -m example_scripts.finetune_regression.finetuneRegr --data_path=. --model_path=/data/user/mikhaillebedev/Chemformer/combined/step1000000.ckpt --augment=True --epochs=100 --vocab_path=example_scripts/finetune_regression/prop_bart_vocab.txt
+ 2221  ls -lhrt
+ 2222  pip install hydra-core --upgrade
+ 2223  python graph/main.py 
+ 2224  ls -lhrtt
+ 2225  ls molbart/
+ 2226  ls -lhrt graph/
+ 2227  python graph/main.py 
+ 2228  cd graph/
+ 2229  python graph/main.py 
+ 2230  python main.py 
+ 2231  ls /Users/mikhaillebedev/study/nlp_graphs/Graph&TextModel/molvae_regr/data/freesolv/split
+ 2232  python main.py 
+ 2233  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/site-packages/torch/autograd/__init__.py
+ 2234  python main.py 
+ 2235  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/site-packages/torch/autograd/__init__.py
+ 2236  python main.py 
+ 2237  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/site-packages/torch/autograd/__init__.py
+ 2238  python main.py 
+ 2239  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/site-packages/torch/autograd/__init__.py
+ 2240  python main.py 
+ 2241  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/site-packages/torch/autograd/__init__.py
+ 2242  python main.py 
+ 2243  python main.py
+ 2244  python main.py 
+ 2245  python main.py
+ 2246  python main.py 
+ 2247  history | grep vim
+ 2248  vim /data/user/mikhaillebedev/anaconda3/envs/molbart/lib/python3.6/site-packages/torch/autograd/__init__.py
+ 2249  python main.py 
+ 2250  ls -lhrt
+ 2251  cd ../
+ 2252  ls -lhrt
+ 2253  №python main.py 
+ 2254  cd graph/
+ 2255  python main.py 
+ 2256  ls
+ 2257  cd ../
+ 2258  ls
+ 2259  ls -lhrt
+ 2260  vim results_predictions.csv 
+ 2261  cd graph/
+ 2262  ls
+ 2263  ls -lhrt
+ 2264  ls outputs
+ 2265  ls 2022-05-01
+ 2266  ls outputs/2022-05-01
+ 2267* 
+ 2268  ls outputs/2022-05-01/22-51-58/metrics.csv 
+ 2269  vim outputs/2022-05-01/22-51-58/metrics.csv 
+ 2270* 
+ 2271  python main.py 
+ 2272* pwdA
+ 2273  python main.py 
+ 2274  ls
+ 2275  ls ../
+ 2276  ls ../results/freesolv/model_str_graph/regr_vanilla/metrics.csv 
+ 2277  vim ../results/freesolv/model_str_graph/regr_vanilla/metrics.csv 
+ 2278  pwd
+ 2279  python main.py 
+ 2280* 
+ 2281  python main.py 
+ 2282  ls /data/user/mikhaillebedev/Chemformer/graph/outputs/2022-05-02/14-15-35/
+ 2283  ls /data/user/mikhaillebedev/Chemformer/graph/outputs/2022-05-02/14-15-35/tb_logs/
+ 2284  ls /data/user/mikhaillebedev/Chemformer/graph/outputs/2022-05-02/14-15-35/tb_logs/freesolv/
+ 2285  ls /data/user/mikhaillebedev/Chemformer/graph/outputs/2022-05-02/14-15-35/tb_logs/freesolv/version_0/
+ 2286  ls /data/user/mikhaillebedev/Chemformer/graph/outputs/2022-05-02/14-15-35/tb_logs/freesolv/version_0/checkpoints/
+ 2287  python main.py 
+ 2288  pip install torchmetrics
+ 2289  python main.py 
+ 2290  pip install torchmetrics==0.5.0
+ 2291  python main.py 
+ 2292  which pip
+ 2293  python main.py 
+ 2294  pip install pandas==1.2.4
+ 2295  conda install python=3.7
+ 2296  conda install -c anaconda python=3.8
+ 2297  conda deactivate
+ 2298  conda create -n molbart2 python=3.9
+ 2299  conda activate molbart2
+ 2300  conda install -c conda-forge rdkit
+ 2301  conda install -c conda-forge libstdcxx-ng
+ 2302  conda install pytorch torchvision cudatoolkit -c pytorch -c nvidia
+ 2303  conda install gcc_linux-64 gxx_linux-64 mpi4py
+ 2304  conda install gcc_linux-64 gxx_linux-64 mpi4py python
+ 2305  conda install -c anaconda python=3.9.0a0
+ 2306  conda installpython=3.9.0a0
+ 2307  conda install python=3.9.0a0
+ 2308  conda install python=3.8
+ 2309  conda deactivate
+ 2310  conda env remove -n molbart2
+ 2311  conda create -n molbart2 python=3.7
+ 2312  conda activate molbart2
+ 2313  conda install -c conda-forge rdkit
+ 2314  conda install pytorch==1.8.0 torchvision cudatoolkit=11.1 -c pytorch -c nvidia
+ 2315  conda install gcc_linux-64 gxx_linux-64 mpi4py
+ 2316  cd ../
+ 2317  which pip
+ 2318  pip install -r requirements.txt
+ 2319  python -m pip install --no-use-pep517 fairscale
+ 2320  python -m pip install --upgrade pip
+ 2321  python -m pip install --no-use-pep517 fairscale
+ 2322  pipenv run pip install fairscale --verbose --upgrade --exists-action=i --no-build-isolation
+ 2323  pip install --no-build-isolation fairscale
+ 2324  pip install -r requirements.txt
+ 2325  vim requirements.txt 
+ 2326  pip install -r requirements.txt
+ 2327  python -m pip install git+https://github.com/MolecularAI/pysmilesutils.git
+ 2328  cd graph/
+ 2329  python main.py 
+ 2330  pip install hydra
+ 2331  python main.py 
+ 2332  pip install pytorch
+ 2333  pip install torch
+ 2334  python main.py 
+ 2335  conda install -y pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c conda-forge
+ 2336  python main.py 
+ 2337  pip install pytorch-lightning
+ 2338  pip install --upgrade pytorch-lightning
+ 2339  python main.py 
+ 2340  pip install --upgrade torch
+ 2341  nvidia-smi
+ 2342  pip install --upgrade deepspeed
+ 2343  python main.py 
+ 2344  conda search -f ttorch
+ 2345  conda search -f torch
+ 2346  conda list
+ 2347  conda deactivate
+ 2348  conda activate molbart2
+ 2349  python main.py 
+ 2350  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/zero/utils.py
+ 2351  python main.py 
+ 2352  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/zero/utils.py
+ 2353  python main.py 
+ 2354  #vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/torch/optim/
+ 2355  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/zero/utils.py
+ 2356  python main.py 
+ 2357  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/zero/utils.py
+ 2358  python main.py 
+ 2359  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/zero/utils.py
+ 2360  python main.py 
+ 2361  pip install torchtext==0.2.3
+ 2362  python main.py 
+ 2363  python -c 'import torch; print(torch); print(torch.__path__)'
+ 2364  ls /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/torch
+ 2365  ls /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/torch/optim/
+ 2366  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/torch/optim/__init__.py
+ 2367  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/zero/utils.py
+ 2368  python main.py 
+ 2369  vim /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/deepspeed/runtime/pipe/engine.py
+ 2370  python main.py 
+ 2371  python -c "import torch; print(torch.__version__)"
+ 2372  which python
+ 2373  pip install --upgrade pytorch
+ 2374  pip install --upgrade torch
+ 2375  python -c "import torch; print(torch.__version__)"
+ 2376  pip uninstall torch
+ 2377  pip install --upgrade torch
+ 2378  python -c "import torch; print(torch.__version__)"
+ 2379  python main.py 
+ 2380  python -m pip freeze | grep hydra
+ 2381  pip install hydra-core
+ 2382  python main.py 
+ 2383  pip install loguru
+ 2384  python main.py 
+ 2385  nvidia-smi
+ 2386  nvcc --version
+ 2387  /usr/local/cuda/bin/nvcc --version
+ 2388  pip install dgl-cu101 dglgo -f https://data.dgl.ai/wheels/repo.html
+ 2389  pip install omegaconf
+ 2390  pip install tqdm
+ 2391  pip install ogb
+ 2392  python main.py 
+ 2393  strings /usr/lib/arm-linux-gnueabihf/libstdc++.so.6 | grep GLIBCXX
+ 2394  conda install libgcc
+ 2395  python main.py 
+ 2396  conda install libgcc
+ 2397  conda install --update libgcc
+ 2398  conda install --update-all libgcc
+ 2399  ls /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/numexpr/../../../
+ 2400  conda install libgcc
+ 2401  #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:
+ 2402  ls /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/
+ 2403  ls /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib/python3.7/site-packages/
+ 2404  #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/
+ 2405  which python
+ 2406  #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/user/mikhaillebedev/anaconda3/lib
+ 2407  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/user/mikhaillebedev/anaconda3/lib
+ 2408  python main.py 
+ 2409  strings data/user/mikhaillebedev/anaconda3/lib/x86_64-linux-gpu/libstdc++.so.6 | grep GLIBCXX
+ 2410  strings /data/user/mikhaillebedev/anaconda3/lib/x86_64-linux-gpu/libstdc++.so.6 | grep GLIBCXX
+ 2411  conda uninstall libgcc
+ 2412  conda install libgcc
+ 2413  python main.py 
+ 2414  conda install -c conda-forge gcc
+ 2415  ls -lhrt /data/user/mikhaillebedev/anaconda3/lib/ | grep libgcc
+ 2416* 
+ 2417  strings /data/user/mikhaillebedev/anaconda3/libgcc_s.so | grep GLIBCXX
+ 2418  strings /data/user/mikhaillebedev/anaconda3/lib/libgcc_s.so | grep GLIBCXX
+ 2419  strings /data/user/mikhaillebedev/anaconda3/lib/libgcc_s.so
+ 2420  python main.py 
+ 2421  cp /data/user/mikhaillebedev/anaconda3/pkgs/libstdcxx-ng-11.2.0-he4da1e4_16/lib/libstdc++.so.6 /data/user/mikhaillebedev/anaconda3/envs/molbart2/lib
+ 2422  python main.py 
+ 2423  pip install pandas==1.2.4
+ 2424  python main.py 
+ 2425  history | grep python | tail -10
+ 2426  history | grep python | tail -40
+ 2427  python -c 'import torchmetrics; print(torchmetrics); print(torchmetrics.__version__)'
+ 2428  pip install torchmetrics==0.5.0
+ 2429  python -c 'import torchmetrics; print(torchmetrics); print(torchmetrics.__version__)'
+ 2430  python main.py 
+ 2431  ls
+ 2432  python main.py 
+ 2433  htop
+ 2434  clear
+ 2435  python main.py 
+ 2436  htop
+ 2437  python main.py 
+ 2438  python ~/GraSeq/GraSeq_single/main.py
+ 2439  history > hist.txt
