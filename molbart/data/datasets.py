@@ -40,7 +40,6 @@ class RegPropDataset(_AbsDataset):
         self.aug_prob = aug_prob
         self.aug = MolAugmenter()
 
-
     def __len__(self):
         return len(self.smiles)
 

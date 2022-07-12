@@ -7,10 +7,12 @@ import sys
 import torch
 from loguru import logger
 from pathlib import Path
+from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
+sys.path.append("..")
 import molbart.util as util
 from graph.finetune_regression_modules import (
     RegPropDataModule,
@@ -21,16 +23,25 @@ from graph_transformer_model import GraphTransformerModel
 from molbart.decoder import DecodeSampler
 
 
-def load_premodel(cfg, graph_dim, args, vocab_size, total_steps, pad_token_idx, tokeniser):
-    sampler = DecodeSampler(tokeniser, args.max_seq_len)
+def load_premodel(
+    cfg, model_path, graph_dim, args, vocab_size, total_steps, pad_token_idx, tokeniser
+):
+    sampler = DecodeSampler(tokeniser, cfg.layers.max_seq_len)
+    print("model_path", model_path)
     premodel = EncoderOfBARTModel.load_from_checkpoint(
-        args.model_path,
+        model_path,
         decode_sampler=sampler,
         pad_token_idx=pad_token_idx,
         vocab_size=vocab_size,
-        num_steps=total_steps,
+        d_model=cfg.layers.d_premodel,
+        num_layers=cfg.layers.num_layers,
+        num_heads=cfg.layers.num_heads,
+        d_feedforward=cfg.layers.d_feedforward,
         lr=cfg.regression.optim.lr,
         weight_decay=cfg.regression.optim.weight_decay,
+        activation="relu",
+        num_steps=total_steps,
+        max_seq_len=cfg.layers.max_seq_len,
         schedule=args.schedule,
         warm_up_steps=args.warm_up_steps,
         dropout=cfg.regression.dropout,
@@ -39,11 +50,33 @@ def load_premodel(cfg, graph_dim, args, vocab_size, total_steps, pad_token_idx, 
     premodel.token_fc = torch.nn.Identity()
     premodel.loss_fn = torch.nn.Identity()
     premodel.log_softmax = torch.nn.Identity()
-    premodel.to("cuda")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    premodel.to(device)
     return premodel
 
-def load_model(cfg, mode, graph_dim, args, vocab_size, total_steps, pad_token_idx, tokeniser):
-    premodel = load_premodel(cfg, graph_dim, args, vocab_size, total_steps, pad_token_idx, tokeniser)
+
+def load_model(
+    cfg,
+    mode,
+    graph_dim,
+    args,
+    vocab_size,
+    total_steps,
+    pad_token_idx,
+    tokeniser,
+    premodel=None,
+):
+    if not premodel:
+        premodel = load_premodel(
+            cfg,
+            args.model_path,
+            graph_dim,
+            args,
+            vocab_size,
+            total_steps,
+            pad_token_idx,
+            tokeniser,
+        )
     if mode == "regression":
         lr = cfg.regression.optim.lr
         weight_decay = cfg.regression.optim.weight_decay
@@ -55,7 +88,7 @@ def load_model(cfg, mode, graph_dim, args, vocab_size, total_steps, pad_token_id
         cfg=cfg,
         mode=mode,
         graph_dim=graph_dim,
-        d_premodel=args.d_premodel,
+        d_premodel=cfg.layers.d_premodel,
         vocab_size=vocab_size,
         premodel=premodel,
         epochs=cfg.regression.epochs,
@@ -65,11 +98,12 @@ def load_model(cfg, mode, graph_dim, args, vocab_size, total_steps, pad_token_id
         weight_decay=weight_decay,
         activation="gelu",
         num_steps=total_steps,
-        max_seq_len=args.max_seq_len,
+        max_seq_len=cfg.layers.max_seq_len,
         dropout_p=cfg.regression.dropout,
-        augment=args.augment,
+        augment=cfg.reconstruction.augment,
     )
-    model.to("cuda")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
     return model
 
 
@@ -131,8 +165,11 @@ def get_targs_preds(model, dl):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     for i, batch in enumerate(iter(dl)):
-        batch = {k: v.to(device=device, non_blocking=True) if hasattr(v, 'to') else v for k, v in batch.items()}
-        batch_preds, pred_reco, mu, lv = model(batch)
+        batch = {
+            k: v.to(device=device, non_blocking=True) if hasattr(v, "to") else v
+            for k, v in batch.items()
+        }
+        batch_preds, pred_reco = model(batch)
         batch_preds = batch_preds.squeeze(dim=1).tolist()
         batch_targs = batch["target"].squeeze(dim=1).tolist()
         preds.extend(batch_preds)
@@ -155,10 +192,10 @@ def get_metrics(cfg, tokeniser, model, task):
         datapath=Path("."),
         tokeniser=tokeniser,
         batch_size=cfg.regression.batch_size,
-        max_seq_len=300,
+        max_seq_len=cfg.layers.max_seq_len,
         augment=False,
         forward_pred=True,
-        num_buckets=24,
+        num_buckets=cfg.general.num_buckets,
     )
     dm1.setup()
 
@@ -182,8 +219,7 @@ def get_metrics(cfg, tokeniser, model, task):
     return results
 
 
-def save_results(cfg, model, metrics, task):
-    assert task in ["regression", "reconstruction"]
+def get_path(cfg, task):
     res_dir = (
         "model"
         + ("_str" if cfg.model.str else "")
@@ -198,18 +234,116 @@ def save_results(cfg, model, metrics, task):
     )
     if not os.path.exists(res_path):
         os.makedirs(res_path, exist_ok=True)
-    torch.save(model, os.path.join(res_path, "model.pth"))
-    if metrics is not None:
+    return res_path
+
+
+def save_results(cfg, model, metrics, task, trainer=None):
+    assert task in ["regression", "reconstruction"]
+    model_prefix = None
+    res_path = get_path(cfg, task)
+    if task == "regression":
+        model_prefix = "regr_model"
+    if task == "reconstruction":
+        model_prefix = "reconstr_model"
+    assert model_prefix
+    return_path = os.path.join(res_path, f"{model_prefix}.pth")
+
+    if trainer:
+        trainer.save_checkpoint(os.path.join(res_path, f"{model_prefix}.ckpt"))
+        return_path = os.path.join(res_path, f"{model_prefix}.ckpt")
+    torch.save(model, os.path.join(res_path, f"{model_prefix}.pth"))
+    if metrics:
         metrics.to_csv(os.path.join(res_path, "metrics.csv"), index=False)
-        # json.dump(metrics, open(os.path.join(res_path, "metrics.json"), "w"))
-    # OmegaConf.save(cfg.model, f=open(os.path.join(res_path, "params.yaml"), "w"))
+    OmegaConf.save(cfg.model, f=open(os.path.join(res_path, "params.yaml"), "w"))
+    print("return_path", return_path)
+    return res_path
+
+
+def pretrain(cfg, model_dir_path, args, tokeniser, task, finetune=False):
+    print("Pretraining the model:")
+    model_path = None
+    if not finetune:
+        premodel_path = args.model_path
+    else:
+        # premodel_path = os.path.join(model_dir_path, "reconstr_model.pth")
+        premodel_path = args.model_path
+        model_path = os.path.join(model_dir_path, "reconstr_model.ckpt")
+    dm_reco = RegPropDataModule(
+        cfg=cfg,
+        sample_size=None,
+        sample_type="regr",
+        task="reconstruction",
+        datapath=Path("."),
+        tokeniser=tokeniser,
+        batch_size=cfg.reconstruction.batch_size,
+        max_seq_len=cfg.layers.max_seq_len,
+        augment=cfg.reconstruction.augment,
+        num_buckets=cfg.general.num_buckets,
+    )
+    pad_token_idx = tokeniser.vocab[tokeniser.pad_token]
+    vocab_size = len(tokeniser)
+
+    train_steps = util.calc_train_steps(cfg, dm_reco)
+    print(f"Train steps: {train_steps}")
+
+    premodel = load_premodel(
+        cfg,
+        premodel_path,
+        dm_reco.train_dataset.graph_dims["nodes"],
+        args,
+        vocab_size,
+        train_steps + 1,
+        pad_token_idx,
+        tokeniser,
+    )
+    if not finetune:
+        model = load_model(
+            cfg,
+            "reconstruction",
+            dm_reco.train_dataset.graph_dims["nodes"],
+            args,
+            vocab_size,
+            train_steps + 1,
+            pad_token_idx,
+            tokeniser,
+            premodel=premodel,
+        )
+    else:
+        model = GraphTransformerModel.load_from_checkpoint(
+            model_path,
+            cfg=cfg,
+            mode="regression",
+            graph_dim=dm_reco.train_dataset.graph_dims["nodes"],
+            vocab_size=vocab_size,
+            d_premodel=cfg.layers.d_premodel,
+            premodel=premodel,
+            h_feedforward=cfg.layers.h_feedforward,
+            lr=cfg.regression.optim.lr,
+            weight_decay=cfg.regression.optim.weight_decay,
+            activation="gelu",
+            num_steps=train_steps + 1,
+            dropout_p=cfg.regression.dropout,
+            max_seq_len=cfg.layers.max_seq_len,
+            batch_size=cfg.regression.batch_size,
+            epochs=cfg.regression.epochs,
+            augment=cfg.reconstruction.augment,
+        )
+    trainer_reco = build_trainer(cfg, "reconstruction", "val_loss")
+    trainer_reco.fit(model, dm_reco)
+
+    path_to_saved_models = save_results(cfg, premodel, None, task, trainer_reco)
+
+    return path_to_saved_models
 
 
 @hydra.main(config_name="config")
 def main(cfg):
+    util.seed_everything(cfg.general.fixed_random_seed)
     global args
+    premodel_path = args.model_path
+    model_path = None
     tokeniser = util.load_tokeniser(
-        "//graph/prop_bart_vocab.txt",
+        "../../../prop_bart_vocab.txt",
         272,
     )
 
@@ -237,64 +371,23 @@ def main(cfg):
     )
 
     vocab_size = len(tokeniser)
-
-
     pad_token_idx = tokeniser.vocab[tokeniser.pad_token]
 
     if task_name == "Regression following reconstruction pretraining":
-        print("Pretraining the model:")
-        dm_reco = RegPropDataModule(
-            cfg=cfg,
-            sample_size=None,
-            sample_type="regr",
-            task="reconstruction",
-            datapath=Path("."),
-            tokeniser=tokeniser,
-            batch_size=cfg.reconstruction.batch_size,
-            max_seq_len=300,
-            augment=False,
-            num_buckets=24,
-        )
-        train_steps = util.calc_train_steps(cfg, dm_reco)
-        print(f"Train steps: {train_steps}")
-        model = load_model(
-            cfg,
-            "reconstruction",
-            dm_reco.train_dataset.graph_dims["nodes"],
-            args,
-            vocab_size,
-            train_steps + 1,
-            pad_token_idx,
-            tokeniser,
-        )
-        trainer_reco = build_trainer(cfg, "reconstruction", "val_loss")
-        trainer_reco.fit(model, dm_reco)
-        print("Finished pretraining the model.")
-        best_model_name_reco = [
-            i
-            for i in os.listdir(os.path.join(trainer_reco.log_dir, "checkpoints"))
-            if i.startswith("epoch")
-        ][0]
-        max_version_reco = max(
-            [
-                int(i.split("_")[1])
-                for i in os.listdir(
-                os.path.join(
-                    "tb_logs", os.path.join(cfg.run.reco_dataset, res_dir, "reconstruction")
-                )
-            )
-            ]
-        )
-        premodel = load_premodel(
-            cfg,
-            dm_reco.train_dataset.graph_dims["nodes"],
-            args,
-            vocab_size,
-            train_steps + 1,
-            pad_token_idx,
-            tokeniser,
+        pretraining_dir = get_path(cfg, "reconstruction")
+        pretraining_dir = pretrain(
+            cfg, pretraining_dir, args, tokeniser, "reconstruction"
         )
 
+        # fine-tuning weights while reconstructing the regression dataset
+        cfg.run.reco_dataset = cfg.run.regr_dataset
+        pretraining_dir = pretrain(
+            cfg, pretraining_dir, args, tokeniser, "reconstruction", finetune=True
+        )
+        premodel_path = (
+            args.model_path
+        )  # os.path.join(pretraining_dir, "reconstr_model.pth")
+        model_path = os.path.join(pretraining_dir, "reconstr_model.ckpt")
 
     for run_number in range(1, cfg.run.n_runs + 1):
         logger.info(
@@ -309,11 +402,10 @@ def main(cfg):
             datapath=Path("."),
             tokeniser=tokeniser,
             batch_size=cfg.regression.batch_size,
-            max_seq_len=300,
-            augment=False,
-            num_buckets=24,
+            max_seq_len=cfg.layers.max_seq_len,
+            augment=cfg.reconstruction.augment,
+            num_buckets=cfg.general.num_buckets,
         )
-        # print(dm)
         print("Finished datamodule.")
         train_steps = util.calc_train_steps(cfg, dm)
         print(f"Train steps: {train_steps}")
@@ -321,6 +413,7 @@ def main(cfg):
         print("Loading model...")
         premodel = load_premodel(
             cfg,
+            premodel_path,
             dm.train_dataset.graph_dims["nodes"],
             args,
             vocab_size,
@@ -328,7 +421,8 @@ def main(cfg):
             pad_token_idx,
             tokeniser,
         )
-        if task_name == "Vanilla regression":
+
+        if cfg.run.regr_vanilla:
             model = load_model(
                 cfg,
                 "regression",
@@ -338,19 +432,16 @@ def main(cfg):
                 train_steps + 1,
                 pad_token_idx,
                 tokeniser,
+                premodel=premodel,
             )
         else:
-            model = model.load_from_checkpoint(
-                os.path.join(
-                    "tb_logs",
-                    os.path.join(cfg.run.reco_dataset, res_dir, "reconstruction"),
-                    f"version_{str(max_version_reco)}/checkpoints/{best_model_name_reco}",
-                ),
+            model = GraphTransformerModel.load_from_checkpoint(
+                model_path,
                 cfg=cfg,
                 mode="regression",
                 graph_dim=dm.train_dataset.graph_dims["nodes"],
                 vocab_size=vocab_size,
-                d_premodel=args.d_premodel,
+                d_premodel=cfg.layers.d_premodel,
                 premodel=premodel,
                 h_feedforward=cfg.layers.h_feedforward,
                 lr=cfg.regression.optim.lr,
@@ -358,23 +449,20 @@ def main(cfg):
                 activation="gelu",
                 num_steps=train_steps + 1,
                 dropout_p=cfg.regression.dropout,
-                max_seq_len=args.max_seq_len,
+                max_seq_len=cfg.layers.max_seq_len,
                 batch_size=cfg.regression.batch_size,
                 epochs=cfg.regression.epochs,
-                augment=args.augment
+                augment=cfg.reconstruction.augment,
             )
-        # pretraining was here
-
         print("Finished model.")
-        # print(model)
+
         print("Building trainer...")
         trainer = build_trainer(cfg, "regression")
         print("Finished trainer.")
 
         print("Fitting data module to trainer")
         trainer.fit(model, dm)
-        print("path logdir ", os.path.join(trainer.log_dir, "checkpoints"))
-        print("log dir", os.listdir(os.path.join(trainer.log_dir, "checkpoints")))
+        print("path logdir ", os.path.join(os.getcwd(), trainer.log_dir, "checkpoints"))
         best_model_name = [
             i
             for i in os.listdir(os.path.join(trainer.log_dir, "checkpoints"))
@@ -392,27 +480,13 @@ def main(cfg):
             ]
         )
         print(
+            "path to model is ",
             os.path.join(
                 "tb_logs",
                 os.path.join(cfg.run.regr_dataset, res_dir, task),
-                f"version_0/checkpoints/{best_model_name}",
-            )
-        )
-        print("path to model is ", os.path.join(
-                "tb_logs",
-                os.path.join(cfg.run.regr_dataset, res_dir, task),
                 f"version_{str(max_version)}/checkpoints/{best_model_name}",
-            ))
-        # model = load_model(
-        #     cfg,
-        #     "regression",
-        #     dm.train_dataset.graph_dims["nodes"],
-        #     args,
-        #     vocab_size,
-        #     train_steps + 1,
-        #     pad_token_idx,
-        #     tokeniser,
-        # )
+            ),
+        )
         model = model.load_from_checkpoint(
             os.path.join(
                 "tb_logs",
@@ -423,7 +497,7 @@ def main(cfg):
             mode="regression",
             graph_dim=dm.train_dataset.graph_dims["nodes"],
             vocab_size=vocab_size,
-            d_premodel=args.d_premodel,
+            d_premodel=cfg.layers.d_premodel,
             premodel=premodel,
             h_feedforward=cfg.layers.h_feedforward,
             lr=cfg.regression.optim.lr,
@@ -431,10 +505,10 @@ def main(cfg):
             activation="gelu",
             num_steps=train_steps + 1,
             dropout_p=cfg.regression.dropout,
-            max_seq_len=args.max_seq_len,
+            max_seq_len=cfg.layers.max_seq_len,
             batch_size=cfg.regression.batch_size,
             epochs=cfg.regression.epochs,
-            augment=args.augment
+            augment=cfg.reconstruction.augment,
         )
         print("Finished training.")
 
@@ -452,11 +526,8 @@ def main(cfg):
     print(
         f"R2 (test) {np.mean(metrics['R2_test']):2.3f} +- {np.std(metrics['R2_test']):2.3f}"
     )
-    # save_results(cfg, model, metrics=metrics, task=task)
+    save_results(cfg, model, metrics=metrics, task=task)
     logger.info(f"{cfg.run.regr_dataset} | {task_name} is DONE!\n\n")
-    # save_path = "results_predictions.csv"
-    # print(results)
-    # results.to_csv(save_path, index=False)
 
 
 if __name__ == "__main__":
@@ -465,33 +536,23 @@ if __name__ == "__main__":
         "/data/user/mikhaillebedev/chemfusion/combined/step1000000.ckpt"
     )
     DEFAULT_SCHEDULE = "cycle"
-    DEFAULT_AUGMENT = True
-    DEFAULT_WARM_UP_STEPS = 300
+    DEFAULT_WARM_UP_STEPS = 3000
     DEFAULT_TRAIN_TOKENS = None
-    DEFAULT_NUM_BUCKETS = 24
     DEFAULT_LIMIT_VAL_BATCHES = 1.0
-    DEFAULT_D_PREMODEL = 512
-    DEFAULT_MAX_SEQ_LEN = 300
-    DEFAULT_H_FEEDFORWARD = 2048
     DEFAULT_drp = 0.2
     DEFAULT_Hdrp = 0.4
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--vocab_path", type=str, default=DEFAULT_vocab_path)
     parser.add_argument("--model_path", type=str, default=DEFAULT_model_path)
-    parser.add_argument("--d_premodel", type=int, default=DEFAULT_D_PREMODEL)
-    parser.add_argument("--h_feedforward", type=int, default=DEFAULT_H_FEEDFORWARD)
     parser.add_argument("--drp", type=int, default=DEFAULT_drp)
     parser.add_argument("--Hdrp", type=int, default=DEFAULT_Hdrp)
-    parser.add_argument("--max_seq_len", type=int, default=DEFAULT_MAX_SEQ_LEN)
     parser.add_argument(
         "--chem_token_start_idx", type=int, default=util.DEFAULT_CHEM_TOKEN_START
     )
     parser.add_argument("--schedule", type=str, default=DEFAULT_SCHEDULE)
-    parser.add_argument("--augment", type=str, default=DEFAULT_AUGMENT)
     parser.add_argument("--warm_up_steps", type=int, default=DEFAULT_WARM_UP_STEPS)
     parser.add_argument("--train_tokens", type=int, default=DEFAULT_TRAIN_TOKENS)
-    parser.add_argument("--num_buckets", type=int, default=DEFAULT_NUM_BUCKETS)
     parser.add_argument(
         "--limit_val_batches", type=float, default=DEFAULT_LIMIT_VAL_BATCHES
     )

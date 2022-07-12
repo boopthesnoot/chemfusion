@@ -1,66 +1,31 @@
 import math
-import torch
-import torch.nn as nn
+import os
 import pytorch_lightning as pl
-from torch.optim.lr_scheduler import OneCycleLR
-from functools import partial
-
 import sys
 
-# sys.path.append("/data/user/mikhaillebedev/chemfusion")
-# sys.path.append("/data/user/mikhaillebedev/chemformer_orig/chemfusion")
+sys.path.append("..")
+import torch
+import torch.nn as nn
+import pandas as pd
+import numpy as np
+
+import dgl
+import joblib
+from loguru import logger
+from functools import partial
+from rdkit import Chem
+from torch.optim.lr_scheduler import OneCycleLR
+from omegaconf import OmegaConf
+from tqdm import tqdm
+import warnings
 
 from molbart.models.util import PreNormEncoderLayer, PreNormDecoderLayer, FuncLR
+from molbart.data.datasets import RegPropDataset
 
 
 # ----------------------------------------------------------------------------------------------------------
 # -------------------------------------------- Abstract Models ---------------------------------------------
 # ----------------------------------------------------------------------------------------------------------
-
-# import json
-import sys
-
-# from datetime import datetime
-import os
-
-# import random
-from rdkit import Chem
-
-sys.path.append("..")
-import dgl
-
-# from torch.utils.data import DataLoader
-# from dgl.dataloading import GraphDataLoader
-import joblib
-
-# from loguru import logger
-import numpy as np
-
-# from omegaconf import OmegaConf
-import pandas as pd
-import torch
-
-# from torch import nn
-# from torch.nn import functional as F
-# from torch.utils.data import Dataset
-# from torch.utils.data.sampler import RandomSampler
-from tqdm import tqdm
-import warnings
-
-# from molbart import util
-# from pytorch_lightning import Trainer
-# from pytorch_lightning.loggers import TensorBoardLogger
-# from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-#
-# from ..molbart.decoder import DecodeSampler
-#
-# from ..example_scripts.finetune_regression.finetune_regression_modules import (
-#     RegPropDataModule,
-#     FineTuneTransformerModel,
-#     EncoderOfBARTModel,
-# )
-
-from molbart.data.datasets import RegPropDataset
 
 
 class GraphStringDataset(dgl.data.DGLDataset, RegPropDataset):
@@ -82,28 +47,10 @@ class GraphStringDataset(dgl.data.DGLDataset, RegPropDataset):
             "split",
             f"{sample_type}.csv",
         )
-        # dgl.data.DGLDataset.__init__(self, name="molecules")
-        # sys.exit()
         RegPropDataset.__init__(self, data_path, self.task)
-        # RegPropDataset.__init__(
-        #     self,
-        #     os.path.join(
-        #         cfg.general.proj_path,
-        #         "data",
-        #         cfg.run.regr_dataset,
-        #         "split",
-        #         f"{sample_type}.csv",
-        #     ),
-        # )
         dgl.data.DGLDataset.__init__(self, name="molecules")
         if sample_size is not None and self.mol_id_list is not None:
             self.smiles = [self.smiles[i] for i in self.mol_id_list]
-            # print("smiles", len(self.smiles))
-            # print("graphs", len(self.graphs))
-        # is_not_too_long = [True if len(smi) < 120 else False for smi in self.smiles]
-        # mols = [Chem.MolFromSmiles(smi) for smi in self.smiles]
-        # is_correct_mol = [True if mol is not None else False for mol in mols]
-        # self.smiles = self.smiles[(np.asarray(is_correct_mol) & np.array(is_not_too_long))]
 
     def process(self):
         assert self.sample_type in ["train", "valid", "test"]
@@ -117,36 +64,17 @@ class GraphStringDataset(dgl.data.DGLDataset, RegPropDataset):
         )
 
         cfg = self.config
-        print(os.path.join(
-            cfg.general.proj_path,
-            "data",
-            cfg.run.regr_dataset if self.task == "regression" else cfg.run.reco_dataset,
-            "split",
-            f"{self.sample_type}.csv",
-        ))
-        # regr_feats = list(
-        #     pd.read_csv(
-        #         os.path.join(
-        #             cfg.general.proj_path,
-        #             "data",
-        #             cfg.run.regr_dataset,
-        #             "graph_preproc",
-        #             f"{self.sample_type}_nodes.csv",
-        #         )
-        #     ).columns
-        # )
-        # reco_feats = list(
-        #     pd.read_csv(
-        #         os.path.join(
-        #             cfg.general.proj_path,
-        #             "data",
-        #             cfg.run.reco_dataset,
-        #             "graph_preproc",
-        #             f"{self.sample_type}_nodes.csv",
-        #         )
-        #     ).columns
-        # )
-        # unified_feats = sorted(set(regr_feats + reco_feats) - {"mol_id", "node_id"})
+        print(
+            os.path.join(
+                cfg.general.proj_path,
+                "data",
+                cfg.run.regr_dataset
+                if self.task == "regression"
+                else cfg.run.reco_dataset,
+                "split",
+                f"{self.sample_type}.csv",
+            )
+        )
 
         data_path = os.path.join(
             cfg.general.proj_path,
@@ -208,11 +136,8 @@ class GraphStringDataset(dgl.data.DGLDataset, RegPropDataset):
             ),
         }
 
-        # .to(torch.long)  # .double()
-
     def __getitem__(self, i):
         smiles, target = RegPropDataset.__getitem__(self, i)
-        # print("SMILES", i,  smiles, self.smiles[i])
         if self.task == "reconstruction":
             assert smiles == self.smiles[i]
         else:
@@ -225,7 +150,6 @@ class GraphStringDataset(dgl.data.DGLDataset, RegPropDataset):
 
 class StringDataset(RegPropDataset):
     def __init__(self, cfg, sample_type, task, sample_size=None):
-        # print(sample_type)
         self.task = task
         self.graph_dims = {"nodes": 1}
         data_path = os.path.join(
@@ -236,8 +160,6 @@ class StringDataset(RegPropDataset):
             f"{sample_type}.csv",
         )
         RegPropDataset.__init__(self, data_path, self.task)
-
-
 
         assert sample_type in ["train", "valid", "test"]
         assert task in ["regression", "reconstruction"]
@@ -289,9 +211,7 @@ class StringDataset(RegPropDataset):
                 sample_size = int(sample_size * len(self.smiles))
             sample_idxs = torch.Tensor(
                 np.random.choice(range(len(self.smiles)), size=sample_size)
-            )  # .long()
-            # print(self.smiles)
-            # print(sample_idxs.numpy())
+            )
             self.smiles = np.array(self.smiles)[sample_idxs.numpy()].to_list()
             self.targets = self.targets[sample_idxs, :].tolist()
             self.graphs = [self.graphs[i] for i in sample_idxs]

@@ -69,15 +69,12 @@ class GraphTransformerModel(FineTuneTransformerModel):
         params = cfg.layers
         self.params = params
         self.premodel = None
-        self.emb = nn.Embedding(vocab_size, 512, padding_idx=0)
+        self.emb = nn.Embedding(vocab_size, cfg.layers.d_model, padding_idx=0)
 
         # Reconstruction part:
-        #if self.mode == "reconstruction":
         if cfg.run.reco or cfg.run.regr_with_reco:
             self.token_fc = nn.Linear(cfg.layers.d_model, vocab_size)
-            self.reco_loss_fn = nn.CrossEntropyLoss(
-                    reduction="none", ignore_index=0
-                )  # pad_token_idx)
+            self.reco_loss_fn = nn.CrossEntropyLoss(reduction="none", ignore_index=0)
             self.log_softmax = nn.LogSoftmax()
             dec_norm = nn.LayerNorm(cfg.layers.d_model)
             dec_layer = PreNormDecoderLayer(
@@ -87,14 +84,11 @@ class GraphTransformerModel(FineTuneTransformerModel):
                 cfg.layers.default_dropout,
                 cfg.layers.activation,
             )
-            # self.encoder = nn.TransformerEncoder(
-            #     enc_layer, cfg.layers.num_layers, norm=enc_norm
-            # )
             self.decoder = nn.TransformerDecoder(
                 dec_layer, cfg.layers.num_layers, norm=dec_norm
             )
 
-        # Regression part
+        # Fusion
         if self.cfg.model.str and self.cfg.model.graph:
             self.fusion_mu = nn.Sequential(
                 nn.Linear(2 * h_feedforward, 2 * h_feedforward),
@@ -114,35 +108,6 @@ class GraphTransformerModel(FineTuneTransformerModel):
             self.premodel = premodel
             self.hidden_fc1 = nn.Linear(self.d_premodel, h_feedforward)
             self.drpmem = nn.Dropout(dropout_p)
-
-            # enc_norm = nn.LayerNorm(cfg.layers.d_model)
-            # enc_layer = PreNormEncoderLayer(
-            #     cfg.layers.d_model,
-            #     cfg.layers.num_heads,
-            #     cfg.layers.d_feedforward,
-            #     cfg.layers.default_dropout,
-            #     cfg.layers.activation,
-            # )
-
-            # self.token_fc = nn.Linear(cfg.layers.d_model, vocab_size)
-            # self.reco_loss_fn = nn.CrossEntropyLoss(
-            #     reduction="none", ignore_index=0
-            # )  # pad_token_idx)
-            # self.log_softmax = nn.LogSoftmax()
-            # dec_norm = nn.LayerNorm(cfg.layers.d_model)
-            # dec_layer = PreNormDecoderLayer(
-            #     cfg.layers.d_model,
-            #     cfg.layers.num_heads,
-            #     cfg.layers.d_feedforward,
-            #     cfg.layers.default_dropout,
-            #     cfg.layers.activation,
-            # )
-            # # self.encoder = nn.TransformerEncoder(
-            # #     enc_layer, cfg.layers.num_layers, norm=enc_norm
-            # # )
-            # self.decoder = nn.TransformerDecoder(
-            #     dec_layer, cfg.layers.num_layers, norm=dec_norm
-            # )
 
         self.ln = nn.LayerNorm(self.d_premodel)
         self.ln2 = nn.LayerNorm(h_feedforward)
@@ -164,18 +129,13 @@ class GraphTransformerModel(FineTuneTransformerModel):
         g_transformed = deepcopy(g)
         g_transformed.ndata["node_feats"] = F.relu(h)
         h = dgl.mean_nodes(g_transformed, "node_feats")
-        return self.fc13(h) #, self.fc14(h)
+        return self.fc13(h)
 
     def str_encode(self, x):
-        # encoder_input = x["encoder_input"]
-        # encoder_pad_mask = x["encoder_pad_mask"].transpose(0, 1)
-        # encoder_embs = self._construct_input(encoder_input)
-
-        # memory = self.encoder(encoder_embs, src_key_padding_mask=encoder_pad_mask)
         memory = self.premodel(x)
-        # encoded = memory[1, :, :]  # TODO: delete? might be shit
+        # encoded = memory[1, :, :]
         encoded = torch.mean(memory, dim=0)
-        return encoded # self.hidden_fc1(encoded)  # , self.hidden_fc2(memory)
+        return encoded
 
     def fusion_layer(self, str_encoded, graph_encoded):
         fused = self.fusion_mu(torch.cat((str_encoded, graph_encoded), dim=1))
@@ -199,12 +159,10 @@ class GraphTransformerModel(FineTuneTransformerModel):
         Returns:
             Output from model (dict containing key "token_output")
         """
-        # print("batch", batch)
         assert batch["graphs"] is not None or batch["masked_tokens"] is not None
         assert self.mode in ["regression", "reconstruction"]
         pred_recon = None
         pred_regr = None
-        mu, logvar = None, None
         if self.cfg.model.str and not self.cfg.model.graph:
             encoded = self.str_encode(batch)
 
@@ -231,7 +189,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
             x = self.drp(x)
             x = self.ln2(x)
             pred_regr = self.predict_fc(x)
-        return pred_regr, pred_recon, mu, logvar
+        return pred_regr, pred_recon
 
     def str_decode(self, x, memory_input):
         encoder_input_dim = x["encoder_input"].shape[0]
@@ -239,7 +197,9 @@ class GraphTransformerModel(FineTuneTransformerModel):
         decoder_pad_mask = x["decoder_pad_mask"].transpose(0, 1)
         decoder_embs = self._construct_input(decoder_input)
         seq_len, _, _ = tuple(decoder_embs.size())
-        memory_input = memory_input.view(1, memory_input.size(0), memory_input.size(-1)).repeat(encoder_input_dim, 1, 1)
+        memory_input = memory_input.view(
+            1, memory_input.size(0), memory_input.size(-1)
+        ).repeat(encoder_input_dim, 1, 1)
         encoder_pad_mask = x["encoder_pad_mask"].transpose(0, 1)
         tgt_mask = self._generate_square_subsequent_mask(seq_len, device="cuda")
         model_output = self.decoder(
@@ -298,7 +258,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
     def training_step(self, batch, batch_idx):
         self.train()
 
-        model_output, pred_reco, mu, lv = self.forward(batch)
+        model_output, pred_reco = self.forward(batch)
         if self.mode == "regression":
             loss = self.loss_fn(batch["target"], model_output)
         else:
@@ -309,8 +269,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
 
     def validation_step(self, batch, batch_idx):
         self.eval()
-        model_output, pred_reco, mu, lv = self.forward(batch)
-        # print("model_output, pred_reco, mu, lv", model_output, pred_reco, mu, lv)
+        model_output, pred_reco = self.forward(batch)
 
         if self.mode == "regression":
             batch_preds = model_output.squeeze(dim=1)  # .tolist()
@@ -323,7 +282,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
 
     def test_step(self, batch, batch_idx):
         self.eval()
-        model_output, pred_reco, mu, lv = self.forward(batch)
+        model_output, pred_reco = self.forward(batch)
         if self.mode == "regression":
             loss = self.loss_fn(batch["target"], model_output)
         else:

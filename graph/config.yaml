@@ -3,36 +3,33 @@ general:
   proj_path: /data/user/mikhaillebedev/nlp_graphs/GraphTextModel/molvae_regr/
   tmp_path: tmp
   pad_symbol: _
-  fixed_random_seed: 19
+  fixed_random_seed: 3407
   eval_size: 3000
   gpus: 1
+  num_buckets: 24
 
 run:
   n_runs: 10
   reco_dataset: moses # freesolv #
   regr_dataset: freesolv
-  regr_vanilla: False
-  reco: True
-  regr_with_reco: True
+  regr_vanilla: True
+  reco: False
+  regr_with_reco: False
 
 model:
   graph: True
-  str: False
+  str: True
   noise: False
   device: gpu
 
 layers:
-  conv1: {'out_channels': 9, 'kernel_size': 9} # 9
-  conv2: {'out_channels': 9, 'kernel_size': 9} # 9
-  conv3: {'out_channels': 10, 'kernel_size': 11} # 10
   gconv1: 100
   gconv2: 200
-  fc0: 435 # 435
   latent_dim: 2048 # 512 # 292 latent space dimensionality
-  fc2: 512
   gru: {'hidden_size': 501, 'num_layers': 3, 'batch_first': True}
   regr: 30
 
+  d_premodel: 512
   d_model: 512
   num_layers: 6
   num_heads: 8
@@ -45,7 +42,7 @@ layers:
 regression:
   batch_size: 16
   acc_batches: 1
-  epochs: 200
+  epochs: 20
   dropout: 0.2
   early_stop: {'tol': 0.00001, 'rounds': 100, 'task': 'min'}
   optim: {'lr': 3e-4, 'weight_decay': 1e-6} # {'lr': 4e-5, 'weight_decay': 1e-6}
@@ -56,8 +53,9 @@ regression:
 
 reconstruction:
   sample_size:
+  augment: True
   batch_size: 1024
-  epochs: 50
+  epochs: 1
   optim: {'lr': 5e-4, 'weight_decay': 1e-6}
   verbose:
     batch: 20
