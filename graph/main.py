@@ -12,7 +12,8 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
-sys.path.append("..")
+sys.path.append(os.path.abspath(".."))
+print(sys.path)
 import molbart.util as util
 from graph.finetune_regression_modules import (
     RegPropDataModule,
@@ -140,7 +141,7 @@ def build_trainer(cfg, task, monitor="val_loss"):
     )
     trainer = Trainer(
         logger=logger,
-        gpus=gpus,
+        # gpus=gpus,
         min_epochs=min_epochs,
         max_epochs=max_epochs,
         precision=precision,
@@ -148,7 +149,10 @@ def build_trainer(cfg, task, monitor="val_loss"):
         gradient_clip_val=clip_grad,
         callbacks=[lr_monitor, checkpoint_cb],
         # progress_bar_refresh_rate=0,
+        devices=1,
+        accelerator="gpu",
         limit_val_batches=4,
+        auto_select_gpus=True,
     )
 
     return trainer
@@ -252,7 +256,7 @@ def save_results(cfg, model, metrics, task, trainer=None):
         trainer.save_checkpoint(os.path.join(res_path, f"{model_prefix}.ckpt"))
         return_path = os.path.join(res_path, f"{model_prefix}.ckpt")
     torch.save(model, os.path.join(res_path, f"{model_prefix}.pth"))
-    if metrics:
+    if metrics is not None:
         metrics.to_csv(os.path.join(res_path, "metrics.csv"), index=False)
     OmegaConf.save(cfg.model, f=open(os.path.join(res_path, "params.yaml"), "w"))
     print("return_path", return_path)
@@ -369,7 +373,9 @@ def main(cfg):
         + ("_str" if cfg.model.str else "")
         + ("_graph" if cfg.model.graph else "")
     )
-
+    logger.info(
+        f"{cfg.run.regr_dataset} | {task_name} | Mode {res_dir}"
+    )
     vocab_size = len(tokeniser)
     pad_token_idx = tokeniser.vocab[tokeniser.pad_token]
 
