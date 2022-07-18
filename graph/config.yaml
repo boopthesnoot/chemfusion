@@ -11,13 +11,13 @@ general:
 run:
   n_runs: 10
   reco_dataset: moses # freesolv #
-  regr_dataset: freesolv
+  regr_dataset: logp # freesolv
   regr_vanilla: True
   reco: False
   regr_with_reco: False
 
 model:
-  graph: True
+  graph: False
   str: True
   noise: False
   device: gpu
@@ -42,7 +42,7 @@ layers:
 regression:
   batch_size: 16
   acc_batches: 1
-  epochs: 20
+  epochs: 200
   dropout: 0.2
   early_stop: {'tol': 0.00001, 'rounds': 100, 'task': 'min'}
   optim: {'lr': 3e-4, 'weight_decay': 1e-6} # {'lr': 4e-5, 'weight_decay': 1e-6}
@@ -54,8 +54,8 @@ regression:
 reconstruction:
   sample_size:
   augment: True
-  batch_size: 1024
-  epochs: 1
+  batch_size: 256
+  epochs: 5
   optim: {'lr': 5e-4, 'weight_decay': 1e-6}
   verbose:
     batch: 20

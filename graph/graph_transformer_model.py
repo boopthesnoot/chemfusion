@@ -101,7 +101,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
             self.gconv2 = GraphConv(params.gconv1, params.gconv2)
 
             self.fc13 = nn.Linear(params.gconv2, h_feedforward)
-            self.fc14 = nn.Linear(params.gconv2, h_feedforward)
+            # self.fc14 = nn.Linear(params.gconv2, h_feedforward)
 
         # Transformer
         if self.cfg.model.str:
@@ -117,7 +117,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
 
         self.hidden_fc = nn.Linear(self.d_premodel, h_feedforward)
         self.predict_fc = nn.Linear(h_feedforward, 1)
-        self.regr = nn.Sequential(self.hidden_fc, self.predict_fc)
+        # self.regr = nn.Sequential(self.hidden_fc, self.predict_fc)
 
         self._init_params()
 
@@ -182,12 +182,12 @@ class GraphTransformerModel(FineTuneTransformerModel):
 
         else:
             x = self.drp(encoded)
-            x = self.ln(x)
+            # x = self.ln(x)
             x = self.hidden_fc(x)
 
             x = F.relu(x)
             x = self.drp(x)
-            x = self.ln2(x)
+            # x = self.ln2(x)
             pred_regr = self.predict_fc(x)
         return pred_regr, pred_recon
 
