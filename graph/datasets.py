@@ -425,9 +425,9 @@ class _AbsTransformerModel(pl.LightningModule):
         return [optim], [sch]
 
     def _transformer_lr(self, step):
-        mult = self.d_model ** -0.5
+        mult = self.d_model**-0.5
         step = 1 if step == 0 else step  # Stop div by zero errors
-        lr = min(step ** -0.5, step * (self.warm_up_steps ** -1.5))
+        lr = min(step**-0.5, step * (self.warm_up_steps**-1.5))
         return self.lr * mult * lr
 
     def _const_lr(self, step):
@@ -456,7 +456,7 @@ class _AbsTransformerModel(pl.LightningModule):
         """
 
         encs = torch.tensor([dim / self.d_model for dim in range(0, self.d_model, 2)])
-        encs = 10000 ** encs
+        encs = 10000**encs
         encs = [
             (torch.sin(pos / encs), torch.cos(pos / encs))
             for pos in range(self.max_seq_len)

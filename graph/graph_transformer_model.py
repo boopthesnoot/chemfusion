@@ -4,6 +4,7 @@ import json
 import math
 import re
 import sys
+from functools import partial
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,6 +16,7 @@ sys.path.append("..")
 from graph.finetune_regression_modules import (
     FineTuneTransformerModel,
 )
+from molbart.decoder import DecodeSampler
 
 from molbart.tokeniser import MolEncTokeniser
 
@@ -45,6 +47,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
         batch_size,
         epochs,
         augment=None,
+        tokeniser=None,
     ):
         super(GraphTransformerModel, self).__init__(
             d_premodel=d_premodel,
@@ -61,6 +64,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
             dropout_p=dropout_p,
             augment=augment,
         )
+
         self.vocab_size = vocab_size
         self.cfg = cfg
         self.register_buffer("pos_emb", self._positional_embs())
@@ -68,14 +72,19 @@ class GraphTransformerModel(FineTuneTransformerModel):
         self.mode = mode
         params = cfg.layers
         self.params = params
-        self.premodel = None
+        self.premodel = premodel
+        self.augment = augment
+        # self.emb = nn.Embedding(vocab_size, cfg.layers.d_model, padding_idx=0)
+        self.tokeniser = tokeniser
         self.emb = nn.Embedding(vocab_size, cfg.layers.d_model, padding_idx=0)
-
+        print("TOKENS", self.tokeniser.begin_token, self.tokeniser.pad_token)
+        # sys.exit()
+        self.sampler = DecodeSampler(tokeniser, cfg.layers.max_seq_len)
         # Reconstruction part:
         if cfg.run.reco or cfg.run.regr_with_reco:
             self.token_fc = nn.Linear(cfg.layers.d_model, vocab_size)
             self.reco_loss_fn = nn.CrossEntropyLoss(reduction="none", ignore_index=0)
-            self.log_softmax = nn.LogSoftmax()
+            self.log_softmax = nn.LogSoftmax(dim=2)
             dec_norm = nn.LayerNorm(cfg.layers.d_model)
             dec_layer = PreNormDecoderLayer(
                 cfg.layers.d_model,
@@ -101,7 +110,6 @@ class GraphTransformerModel(FineTuneTransformerModel):
             self.gconv2 = GraphConv(params.gconv1, params.gconv2)
 
             self.fc13 = nn.Linear(params.gconv2, h_feedforward)
-            # self.fc14 = nn.Linear(params.gconv2, h_feedforward)
 
         # Transformer
         if self.cfg.model.str:
@@ -120,6 +128,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
         # self.regr = nn.Sequential(self.hidden_fc, self.predict_fc)
 
         self._init_params()
+        self.save_hyperparameters()
 
     def graph_encode(self, g):
         h = g.ndata["node_feats"]
@@ -140,6 +149,22 @@ class GraphTransformerModel(FineTuneTransformerModel):
     def fusion_layer(self, str_encoded, graph_encoded):
         fused = self.fusion_mu(torch.cat((str_encoded, graph_encoded), dim=1))
         return fused
+
+    def encode(self, batch):
+        assert batch["graphs"] is not None or batch["masked_tokens"] is not None
+        if self.cfg.model.str and not self.cfg.model.graph:
+            encoded = self.str_encode(batch)
+
+        elif not self.cfg.model.str and self.cfg.model.graph:
+            encoded = self.graph_encode(batch["graphs"])
+
+        elif self.cfg.model.str and self.cfg.model.graph:
+            encoded_str = self.str_encode(batch)
+            encoded_graph = self.graph_encode(batch["graphs"])
+            encoded = self.fusion_layer(encoded_str, encoded_graph)
+        else:
+            raise Exception
+        return encoded
 
     def forward(self, batch):
         """Apply SMILES strings to model
@@ -163,21 +188,11 @@ class GraphTransformerModel(FineTuneTransformerModel):
         assert self.mode in ["regression", "reconstruction"]
         pred_recon = None
         pred_regr = None
-        if self.cfg.model.str and not self.cfg.model.graph:
-            encoded = self.str_encode(batch)
 
-        elif not self.cfg.model.str and self.cfg.model.graph:
-            encoded = self.graph_encode(batch["graphs"])
-
-        elif self.cfg.model.str and self.cfg.model.graph:
-            encoded_str = self.str_encode(batch)
-            encoded_graph = self.graph_encode(batch["graphs"])
-            encoded = self.fusion_layer(encoded_str, encoded_graph)
-        else:
-            raise Exception
-
+        encoded = self.encode(batch)
         if self.mode == "reconstruction":
-            model_output, token_output = self.str_decode(batch, encoded)
+            batch["memory_input"] = encoded
+            model_output, token_output = self.str_decode(batch)
             pred_recon = {"model_output": model_output, "token_output": token_output}
 
         else:
@@ -190,28 +205,6 @@ class GraphTransformerModel(FineTuneTransformerModel):
             # x = self.ln2(x)
             pred_regr = self.predict_fc(x)
         return pred_regr, pred_recon
-
-    def str_decode(self, x, memory_input):
-        encoder_input_dim = x["encoder_input"].shape[0]
-        decoder_input = x["decoder_input"]
-        decoder_pad_mask = x["decoder_pad_mask"].transpose(0, 1)
-        decoder_embs = self._construct_input(decoder_input)
-        seq_len, _, _ = tuple(decoder_embs.size())
-        memory_input = memory_input.view(
-            1, memory_input.size(0), memory_input.size(-1)
-        ).repeat(encoder_input_dim, 1, 1)
-        encoder_pad_mask = x["encoder_pad_mask"].transpose(0, 1)
-        tgt_mask = self._generate_square_subsequent_mask(seq_len, device="cuda")
-        model_output = self.decoder(
-            decoder_embs,
-            memory_input,
-            tgt_key_padding_mask=decoder_pad_mask,
-            memory_key_padding_mask=encoder_pad_mask.clone(),
-            tgt_mask=tgt_mask,
-        )
-        token_output = self.token_fc(model_output)
-        token_probs = self.log_softmax(token_output)
-        return token_output, token_probs
 
     def calc_reco_loss(self, batch_input, model_output):
         """Calculate the loss for the model
@@ -248,7 +241,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
         loss = self.reco_loss_fn(token_pred, target.reshape(-1)).reshape(
             (seq_len, batch_size)
         )
-
+        # print("_calc_mask_loss", token_pred.shape, target.reshape(-1).shape)
         inv_target_mask = ~(target_mask > 0)
         num_tokens = inv_target_mask.sum()
         loss = loss.sum() / num_tokens
@@ -263,7 +256,9 @@ class GraphTransformerModel(FineTuneTransformerModel):
             loss = self.loss_fn(batch["target"], model_output)
         else:
             loss = self.calc_reco_loss(batch, pred_reco)
-        self.log("train_loss", loss, on_step=True, logger=True)  # , prog_bar=True
+        self.log(
+            "train_loss", loss, on_step=True, on_epoch=True, logger=True
+        )  # , prog_bar=True
 
         return loss
 
@@ -286,7 +281,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
         if self.mode == "regression":
             loss = self.loss_fn(batch["target"], model_output)
         else:
-            loss = self.loss_reco(pred_reco, x.transpose(1, 2), mu, lv)
+            loss = self.calc_reco_loss(batch, pred_reco)
         return loss
 
     def test_epoch_end(self, outputs):
@@ -327,7 +322,7 @@ class GraphTransformerModel(FineTuneTransformerModel):
         encs = torch.tensor(
             [dim / self.d_premodel for dim in range(0, self.d_premodel, 2)]
         )
-        encs = 10000 ** encs
+        encs = 10000**encs
         encs = [
             (torch.sin(pos / encs), torch.cos(pos / encs))
             for pos in range(self.max_seq_len)
@@ -367,32 +362,183 @@ class GraphTransformerModel(FineTuneTransformerModel):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def _decode_fn(self, token_ids, pad_mask, memory, mem_pad_mask):
+    def _decode_fn(self, token_ids, pad_mask, memory, mem_pad_mask, batch=None):
         decode_input = {
             "decoder_input": token_ids,
             "decoder_pad_mask": pad_mask,
             "memory_input": memory,
             "memory_pad_mask": mem_pad_mask,
         }
-        model_output = self.decode(decode_input)
-        return model_output
+        # for i in decode_input:
+        #     print(i, decode_input[i].shape)
+        if batch:
+            decode_input["encoder_pad_mask"] = batch["encoder_pad_mask"]
+        log_lhs = self.str_decode(decode_input, mode="decode")
+        return log_lhs
 
-    def __deepcopy__(self):
-        return GraphTransformerModel(
-            self.cfg,
-            self.task,
-            self.graph_dim,
-            self.vocab_size,
-            self.d_premodel,
-            self.premodel,
-            self.h_feedforward,
-            self.lr,
-            self.weight_decay,
-            self.activation,
-            self.num_steps,
-            self.dropout_p,
-            self.max_seq_len,
-            self.batch_size,
-            self.epochs,
-            augment=None,
+    def str_decode(self, batch, mode="regular"):
+        """Construct an output from a given decoder input
+        Args:
+            batch (dict {
+                "decoder_input": tensor of decoder token_ids of shape (tgt_len, batch_size)
+                "decoder_pad_mask": bool tensor of decoder padding mask of shape (tgt_len, batch_size)
+                "memory_input": tensor from encoded input of shape (src_len, batch_size, d_model)
+                "memory_pad_mask": bool tensor of memory padding mask of shape (src_len, batch_size)
+            })
+        """
+        decoder_input = batch["decoder_input"]
+        decoder_pad_mask = batch["decoder_pad_mask"].transpose(0, 1)
+        memory_input = batch["memory_input"]
+        if "encoder_pad_mask" in batch:
+            encoder_pad_mask = batch["encoder_pad_mask"].transpose(0, 1)
+            memory_pad_mask = encoder_pad_mask.clone()  # .transpose(0, 1)
+        # if memory_pad_mask = encoder_pad_mask.clone()
+        else:
+            memory_pad_mask = batch["memory_pad_mask"].transpose(0, 1)
+
+        decoder_embs = self._construct_input(decoder_input)
+
+        seq_len, batch_size, dict_length = tuple(decoder_embs.size())
+        # memory_input = memory_input.view(
+        #     1, memory_input.size(0), memory_input.size(-1)
+        # ).repeat(batch["memory_pad_mask"].shape[0], 1, 1)
+        # if mode == "decode":
+        #     # encoder_pad_mask = batch["encoder_pad_mask"].transpose(0, 1)
+        #     memory_pad_mask = batch["memory_pad_mask"].transpose(0, 1)
+        #     reshape = batch["memory_pad_mask"].shape[0]
+        # else:
+        #     reshape = batch["encoder_input"].shape[0]
+        memory_input = memory_input.view(
+            1, memory_input.size(0), memory_input.size(-1)
+        ).repeat(memory_pad_mask.transpose(0, 1).shape[0], 1, 1)
+        # print("memory_input1 shape", memory_input1.shape)
+        # memory_input = memory_input.view(
+        #                 1, memory_input.size(0), memory_input.size(-1)
+        #             ).repeat(batch["encoder_input"].shape[0], 1, 1)
+        # print("memory_input shape", memory_input.shape)
+        tgt_mask = self._generate_square_subsequent_mask(
+            seq_len, device=decoder_embs.device
         )
+
+        model_output = self.decoder(
+            decoder_embs,
+            memory_input,
+            tgt_key_padding_mask=decoder_pad_mask,
+            memory_key_padding_mask=memory_pad_mask,
+            tgt_mask=tgt_mask,
+        )
+        token_output = self.token_fc(model_output)
+        token_probs = self.log_softmax(token_output)
+        if mode == "decode":
+            return token_probs
+        return token_output, token_probs
+
+    def sample_molecules(self, batch_input, sampling_alg="greedy"):
+        """Sample molecules from the model
+        Args:
+            batch_input (dict): Input given to model
+            sampling_alg (str): Algorithm to use to sample SMILES strings from model
+        Returns:
+            ([[str]], [[float]]): Tuple of molecule SMILES strings and log lhs (outer dimension is batch)
+        """
+
+        enc_input = batch_input["encoder_input"]
+        enc_mask = batch_input["encoder_pad_mask"]
+
+        # Freezing the weights reduces the amount of memory leakage in the transformer
+        self.freeze()
+        memory = self.encode(batch_input)
+        mem_mask = enc_mask.clone()
+        batch_size = enc_input.shape[1]
+        decode_fn = partial(self._decode_fn, memory=memory, mem_pad_mask=mem_mask)
+
+        if sampling_alg == "greedy":
+            mol_strs, log_lhs = self.sampler.greedy_decode(
+                decode_fn, batch_size, memory.device
+            )
+
+        elif sampling_alg == "beam":
+            mol_strs, log_lhs = self.sampler.beam_decode(
+                decode_fn, batch_size, memory.device, k=5
+            )
+
+        else:
+            raise ValueError(f"Unknown sampling algorithm {sampling_alg}")
+
+        # Must remember to unfreeze!
+        self.unfreeze()
+        return mol_strs, log_lhs
+
+    # def sample_molecules(self, batch_input, sampling_alg="greedy"):
+    #     """Sample molecules from the model
+    #     Args:
+    #         batch_input (dict): Input given to model
+    #         sampling_alg (str): Algorithm to use to sample SMILES strings from model
+    #     Returns:
+    #         ([[str]], [[float]]): Tuple of molecule SMILES strings and log lhs (outer dimension is batch)
+    #     """
+    #
+    #     enc_mask = batch_input["encoder_pad_mask"].transpose(0, 1)
+    #
+    #     # Freezing the weights reduces the amount of memory leakage in the transformer
+    #     self.freeze()
+    #     batch = batch_input
+    #
+    #     if self.cfg.model.str and not self.cfg.model.graph:
+    #         memory = self.str_encode(batch)
+    #
+    #     elif not self.cfg.model.str and self.cfg.model.graph:
+    #         memory = self.graph_encode(batch["graphs"])
+    #
+    #     elif self.cfg.model.str and self.cfg.model.graph:
+    #         encoded_str = self.str_encode(batch)
+    #         encoded_graph = self.graph_encode(batch["graphs"])
+    #         memory = self.fusion_layer(encoded_str, encoded_graph)
+    #     else:
+    #         raise Exception
+    #
+    #     mem_mask = enc_mask.clone()
+    #     from functools import partial
+    #     batch_size, _ = tuple(memory.size())
+    #     print("batch_size", batch_size)
+    #
+    #     # memory = memory.view(1, memory.size(0), memory.size(-1)).repeat(encoder_input_dim, 1, 1)
+    #     # print("size", memory.size(), memory.size(0), memory.size(-1), encoder_input_dim)
+    #     memory = memory.view(
+    #         1, memory.size(0), memory.size(-1)
+    #     ).repeat(batch_size, 1, 1)
+    #
+    #     # _, batch_size, _ = tuple(memory.size())
+    #
+    #     decode_fn = partial(self._decode_fn,
+    #                         memory=memory,
+    #                         mem_pad_mask=mem_mask,
+    #                         batch=batch_input)
+    #
+    #     # print("mem_mask.device", mem_mask.device)
+    #     # print("batch")
+    #     if sampling_alg == "greedy":
+    #         mol_strs, log_lhs = self.sampler.greedy_decode(
+    #             decode_fn, batch_size, memory.device
+    #         )
+    #
+    #     # elif sampling_alg == "beam":
+    #     #     mol_strs, log_lhs = self.sampler.beam_decode(
+    #     #         decode_fn, batch_size, memory.device, k=self.num_beams
+    #     #     )
+    #
+    #     else:
+    #         raise ValueError(f"Unknown sampling algorithm {sampling_alg}")
+    #
+    #     # Must remember to unfreeze!
+    #     self.unfreeze()
+    #
+    #     return mol_strs, log_lhs
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result

@@ -368,7 +368,7 @@ class RegrTransformerModel(pl.LightningModule):
         """
 
         encs = torch.tensor([dim / self.d_model for dim in range(0, self.d_model, 2)])
-        encs = 10000 ** encs
+        encs = 10000**encs
         encs = [
             (torch.sin(pos / encs), torch.cos(pos / encs))
             for pos in range(self.max_seq_len)
@@ -550,7 +550,7 @@ class FineTuneTransformerModel(pl.LightningModule):
         encs = torch.tensor(
             [dim / self.d_premodel for dim in range(0, self.d_premodel, 2)]
         )
-        encs = 10000 ** encs
+        encs = 10000**encs
         encs = [
             (torch.sin(pos / encs), torch.cos(pos / encs))
             for pos in range(self.max_seq_len)
@@ -589,6 +589,14 @@ class FineTuneTransformerModel(pl.LightningModule):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
 
 
 ####################################### EncoderOfBARTModel ####################################################
@@ -670,6 +678,7 @@ class EncoderOfBARTModel(_AbsTransformerModel):
         self.log_softmax = nn.LogSoftmax(dim=2)
 
         self._init_params()
+        self.save_hyperparameters()
 
     def forward(self, x):
         """Apply SMILES strings to model
@@ -778,9 +787,9 @@ class EncoderOfBARTModel(_AbsTransformerModel):
         return [optim], [sch]
 
     def _transformer_lr(self, step):
-        mult = self.d_model ** -0.5
+        mult = self.d_model**-0.5
         step = 1 if step == 0 else step  # Stop div by zero errors
-        lr = min(step ** -0.5, step * (self.warm_up_steps ** -1.5))
+        lr = min(step**-0.5, step * (self.warm_up_steps**-1.5))
         return self.lr * mult * lr
 
     def validation_step(self, batch, batch_idx):

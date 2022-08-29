@@ -36,6 +36,7 @@ class PreNormDecoderLayer(nn.TransformerDecoderLayer):
         tgt_key_padding_mask=None,
         memory_key_padding_mask=None,
     ):
+        # print("tgt_key_padding_mask.device", tgt_key_padding_mask.device)
         # Self attention block
         query = self.norm1(tgt)
         query = self.self_attn(

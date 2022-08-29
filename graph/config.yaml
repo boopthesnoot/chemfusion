@@ -10,15 +10,15 @@ general:
 
 run:
   n_runs: 10
-  reco_dataset: moses # freesolv #
-  regr_dataset: logp # freesolv
-  regr_vanilla: True
-  reco: False
-  regr_with_reco: False
+  reco_dataset: moses # esol #  freesolv # logp #
+  regr_dataset: freesolv # esol # logp #
+  regr_vanilla: False
+  reco: True
+  regr_with_reco: True
 
 model:
-  graph: False
-  str: True
+  graph: True
+  str: False
   noise: False
   device: gpu
 
@@ -54,8 +54,8 @@ regression:
 reconstruction:
   sample_size:
   augment: True
-  batch_size: 256
-  epochs: 5
+  batch_size: 128
+  epochs: 10
   optim: {'lr': 5e-4, 'weight_decay': 1e-6}
   verbose:
     batch: 20

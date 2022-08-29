@@ -1,4 +1,5 @@
 import torch
+from tqdm import tqdm
 from rdkit import Chem, RDLogger
 
 
@@ -68,12 +69,16 @@ class DecodeSampler:
         log_lhs = torch.zeros((batch_size))
 
         # Iteratively apply the tokens to the model and build up the sequence
-        for i in range(1, self.max_seq_len):
+        print("Building up reconstruction sequences")
+        cap = 300
+        for i in tqdm(range(1, cap)):  # self.max_seq_len):
+            # print(i)
             token_ids_seq = token_ids[:i, :]
             pad_mask_seq = pad_mask[:i, :]
 
             # Sample next id for each element in the batch
             output_dist = decode_fn(token_ids_seq, pad_mask_seq)
+            # print("output_dist", output_dist)
             probs, output_ids = output_dist.max(dim=2)
             new_ids = output_ids[-1, :]
             new_probs = probs[-1, :]
@@ -90,7 +95,7 @@ class DecodeSampler:
                 break
 
             # Ensure all sequences contain an end token
-            if i == self.max_seq_len - 1:
+            if i == cap - 1:
                 new_ids[~new_pad_mask] = self.end_token_id
 
             # Set the token to pad where required, update the token ids and update lls
@@ -151,6 +156,7 @@ class DecodeSampler:
             pad_mask_list[beam_idx][1, :] = 0
 
         for i in range(2, self.max_seq_len):
+            print(i)
             complete = self._update_beams_(
                 i, decode_fn, token_ids_list, pad_mask_list, lls_list
             )
