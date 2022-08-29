@@ -399,23 +399,9 @@ class GraphTransformerModel(FineTuneTransformerModel):
         decoder_embs = self._construct_input(decoder_input)
 
         seq_len, batch_size, dict_length = tuple(decoder_embs.size())
-        # memory_input = memory_input.view(
-        #     1, memory_input.size(0), memory_input.size(-1)
-        # ).repeat(batch["memory_pad_mask"].shape[0], 1, 1)
-        # if mode == "decode":
-        #     # encoder_pad_mask = batch["encoder_pad_mask"].transpose(0, 1)
-        #     memory_pad_mask = batch["memory_pad_mask"].transpose(0, 1)
-        #     reshape = batch["memory_pad_mask"].shape[0]
-        # else:
-        #     reshape = batch["encoder_input"].shape[0]
         memory_input = memory_input.view(
             1, memory_input.size(0), memory_input.size(-1)
         ).repeat(memory_pad_mask.transpose(0, 1).shape[0], 1, 1)
-        # print("memory_input1 shape", memory_input1.shape)
-        # memory_input = memory_input.view(
-        #                 1, memory_input.size(0), memory_input.size(-1)
-        #             ).repeat(batch["encoder_input"].shape[0], 1, 1)
-        # print("memory_input shape", memory_input.shape)
         tgt_mask = self._generate_square_subsequent_mask(
             seq_len, device=decoder_embs.device
         )
@@ -468,72 +454,6 @@ class GraphTransformerModel(FineTuneTransformerModel):
         # Must remember to unfreeze!
         self.unfreeze()
         return mol_strs, log_lhs
-
-    # def sample_molecules(self, batch_input, sampling_alg="greedy"):
-    #     """Sample molecules from the model
-    #     Args:
-    #         batch_input (dict): Input given to model
-    #         sampling_alg (str): Algorithm to use to sample SMILES strings from model
-    #     Returns:
-    #         ([[str]], [[float]]): Tuple of molecule SMILES strings and log lhs (outer dimension is batch)
-    #     """
-    #
-    #     enc_mask = batch_input["encoder_pad_mask"].transpose(0, 1)
-    #
-    #     # Freezing the weights reduces the amount of memory leakage in the transformer
-    #     self.freeze()
-    #     batch = batch_input
-    #
-    #     if self.cfg.model.str and not self.cfg.model.graph:
-    #         memory = self.str_encode(batch)
-    #
-    #     elif not self.cfg.model.str and self.cfg.model.graph:
-    #         memory = self.graph_encode(batch["graphs"])
-    #
-    #     elif self.cfg.model.str and self.cfg.model.graph:
-    #         encoded_str = self.str_encode(batch)
-    #         encoded_graph = self.graph_encode(batch["graphs"])
-    #         memory = self.fusion_layer(encoded_str, encoded_graph)
-    #     else:
-    #         raise Exception
-    #
-    #     mem_mask = enc_mask.clone()
-    #     from functools import partial
-    #     batch_size, _ = tuple(memory.size())
-    #     print("batch_size", batch_size)
-    #
-    #     # memory = memory.view(1, memory.size(0), memory.size(-1)).repeat(encoder_input_dim, 1, 1)
-    #     # print("size", memory.size(), memory.size(0), memory.size(-1), encoder_input_dim)
-    #     memory = memory.view(
-    #         1, memory.size(0), memory.size(-1)
-    #     ).repeat(batch_size, 1, 1)
-    #
-    #     # _, batch_size, _ = tuple(memory.size())
-    #
-    #     decode_fn = partial(self._decode_fn,
-    #                         memory=memory,
-    #                         mem_pad_mask=mem_mask,
-    #                         batch=batch_input)
-    #
-    #     # print("mem_mask.device", mem_mask.device)
-    #     # print("batch")
-    #     if sampling_alg == "greedy":
-    #         mol_strs, log_lhs = self.sampler.greedy_decode(
-    #             decode_fn, batch_size, memory.device
-    #         )
-    #
-    #     # elif sampling_alg == "beam":
-    #     #     mol_strs, log_lhs = self.sampler.beam_decode(
-    #     #         decode_fn, batch_size, memory.device, k=self.num_beams
-    #     #     )
-    #
-    #     else:
-    #         raise ValueError(f"Unknown sampling algorithm {sampling_alg}")
-    #
-    #     # Must remember to unfreeze!
-    #     self.unfreeze()
-    #
-    #     return mol_strs, log_lhs
 
     def __deepcopy__(self, memo):
         cls = self.__class__
